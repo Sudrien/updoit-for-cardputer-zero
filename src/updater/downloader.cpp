@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 
 namespace updater {
 namespace fs = std::filesystem;
@@ -20,6 +21,16 @@ uint64_t file_size_or_zero(const fs::path& path) {
     std::error_code ec;
     const auto size = fs::file_size(path, ec);
     return ec ? 0 : static_cast<uint64_t>(size);
+}
+
+// Bytes actually written. aria2 downloads split segments at their offsets, so the file
+// size reaches the end long before the data does; allocated blocks track real progress.
+uint64_t written_bytes(const fs::path& path) {
+    struct stat st {};
+    if (::stat(path.c_str(), &st) != 0) {
+        return 0;
+    }
+    return static_cast<uint64_t>(st.st_blocks) * 512;
 }
 
 bool path_exists(const fs::path& path) {
@@ -52,7 +63,7 @@ DownloadProgress Downloader::poll(const std::vector<DownloadItem>& items) const 
             DownloadFileState state;
             state.name = item.filename;
             state.size = item.size;
-            state.done = std::min(file_size_or_zero(path), item.size);
+            state.done = std::min(written_bytes(path), item.size);
             progress.done_bytes += state.done;
             progress.active.push_back(std::move(state));
         }
@@ -132,6 +143,9 @@ bool Downloader::run(const std::vector<DownloadItem>& items,
     };
     if (!options_.proxy.empty()) {
         run.argv.push_back("--all-proxy=" + options_.proxy);
+    }
+    if (!options_.max_rate.empty()) {
+        run.argv.push_back("--max-overall-download-limit=" + options_.max_rate);
     }
     run.cancel = cancel;
     run.on_line = on_log;

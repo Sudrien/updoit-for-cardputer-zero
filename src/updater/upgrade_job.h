@@ -59,6 +59,7 @@ struct JobConfig {
     std::string status_helper = "/usr/libexec/updoit/updoit-check";
     int parallel_files = 4;
     int connections_per_file = 2;
+    std::string max_download_rate; // aria2 syntax ("500K"); empty = unlimited
     size_t log_lines = 200;
 };
 

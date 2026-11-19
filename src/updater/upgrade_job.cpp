@@ -354,6 +354,7 @@ void UpgradeJob::execute_worker(Operation op) {
         options.parallel_files = config_.parallel_files;
         options.connections_per_file = config_.connections_per_file;
         options.proxy = apt_http_proxy();
+        options.max_rate = config_.max_download_rate;
         Downloader downloader(options);
 
         std::string error;

@@ -34,6 +34,7 @@ struct DownloaderOptions {
     int parallel_files = 4;     // aria2c -j
     int connections_per_file = 2; // aria2c -x / -s
     std::string proxy;          // optional, passed as --all-proxy
+    std::string max_rate;       // optional aria2 rate limit, e.g. "500K"; empty = unlimited
     std::string aria2c = "aria2c";
 };
 
