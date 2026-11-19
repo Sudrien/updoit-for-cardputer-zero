@@ -25,7 +25,7 @@ Hints hints_for(model::AppPage page, bool can_cancel) {
         case model::AppPage::Password:
             return {{{"ESC", "Quit"}, {"ENTER", "Unlock"}, {nullptr, nullptr}}};
         case model::AppPage::Menu:
-            return {{{"ESC", "Quit"}, {"UP/DN", "Choose"}, {"ENTER", "Run"}}};
+            return {{{"ESC", "Quit"}, {"UP/DN", "Choose"}, {"1-6", "Run"}}};
         case model::AppPage::Confirm:
             return {{{"ESC", "Back"}, {"UP/DN", "Scroll"}, {"ENTER", "Start"}}};
         case model::AppPage::Progress:

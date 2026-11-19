@@ -8,7 +8,7 @@ Use repository presets rather than custom build directories:
   `win32-mingw64`;
 - device presets: `cp0-native` and `cp0-cross`;
 - release workflow: `cp0-cross-package`;
-- Debian package output: `dist/<APP_DISPLAY_NAME>_<version>_<revision>_arm64.deb`.
+- Debian package output: `dist/<package_name>_<version>_<revision>_arm64.deb`.
 
 `cmake/cm0-package.cmake` is the installation/package contract. `app-builder.json` is the final
 upload/store contract. Neither replaces the other.

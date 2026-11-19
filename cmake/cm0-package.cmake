@@ -6,7 +6,7 @@
 
 include(GNUInstallDirs)
 
-set(APP_DISPLAY_NAME "Updoit For Cardputer Zero" CACHE STRING "Human-readable application name used by launchers and package filename")
+set(APP_DISPLAY_NAME "Updoit For Cardputer Zero" CACHE STRING "Human-readable application name used by launchers (the package file name uses the Debian package name)")
 set(APP_DEBIAN_REVISION "rev1" CACHE STRING "Debian package revision/vendor suffix")
 set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
@@ -108,12 +108,13 @@ set(CPACK_PACKAGE_VENDOR "${APP_MAINTAINER}")
 set(CPACK_PACKAGE_CONTACT "${APP_MAINTAINER}")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${APP_PACKAGE_DESCRIPTION}")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_FILE_NAME "${APP_DISPLAY_NAME}_${PROJECT_VERSION}_${APP_DEBIAN_REVISION}_${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/LICENSE.txt")
 
 string(TOLOWER "${APP_DISPLAY_NAME}" APP_DEBIAN_PACKAGE_NAME)
 string(REGEX REPLACE "[^a-z0-9+.-]" "-" APP_DEBIAN_PACKAGE_NAME "${APP_DEBIAN_PACKAGE_NAME}")
 set(CPACK_DEBIAN_PACKAGE_NAME "${APP_DEBIAN_PACKAGE_NAME}")
+# File name uses the Debian package name, so the path has no whitespace.
+set(CPACK_PACKAGE_FILE_NAME "${APP_DEBIAN_PACKAGE_NAME}_${PROJECT_VERSION}_${APP_DEBIAN_REVISION}_${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_DEBIAN_PACKAGE_RELEASE "${APP_DEBIAN_REVISION}")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${APP_DEBIAN_ARCHITECTURE}")

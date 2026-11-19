@@ -61,10 +61,16 @@ void MenuScreen::build_content(lv_obj_t* content) {
         lv_obj_set_style_bg_opa(row, LV_OPA_20, LV_STATE_CHECKED);
         style::accent(row, dark, style::Accent::Part::Bg, style::Accent::Tone::Primary);
 
-        char text[48];
-        lv_snprintf(text, sizeof(text), "%d  %s", i + 1, viewmodel::BaseViewModel::menu_label(i));
-        auto* name = style::label(row, dark, style::font(assets(), 14, true), text);
-        lv_obj_align(name, LV_ALIGN_LEFT_MID, 0, 0);
+        // Hotkey number in the accent colour, like the key names in the bottom bar.
+        char number[4];
+        lv_snprintf(number, sizeof(number), "%d", i + 1);
+        auto* key = style::label(row, dark, style::font(assets(), 14, true), number);
+        style::accent(key, dark, style::Accent::Part::Text, style::Accent::Tone::Primary);
+        lv_obj_align(key, LV_ALIGN_LEFT_MID, 0, 0);
+
+        auto* name = style::label(row, dark, style::font(assets(), 14, true),
+                                  viewmodel::BaseViewModel::menu_label(i));
+        lv_obj_align(name, LV_ALIGN_LEFT_MID, 16, 0);
 
         auto* hint = style::label(row, dark, style::font(assets(), 12));
         reactive::bind_label_text(hint, view_model().menu_hint_subject(i));
@@ -83,12 +89,20 @@ bool MenuScreen::handle_key(uint32_t key) {
         case LV_KEY_LEFT:
         case ';': // Cardputer arrow keys without fn
         case ',':
+        case 'w': // letters work as arrows too
+        case 'W':
+        case 'a':
+        case 'A':
             vm.menu_move(-1);
             return true;
         case LV_KEY_DOWN:
         case LV_KEY_RIGHT:
         case '.':
         case '/':
+        case 's':
+        case 'S':
+        case 'd':
+        case 'D':
             vm.menu_move(1);
             return true;
         case LV_KEY_ENTER:

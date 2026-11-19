@@ -36,7 +36,7 @@ guard, reboot prompt, network check, auto-upgrade, pipelined download+install).
 | Page | Keys |
 | --- | --- |
 | Password | type, `Enter` unlock, `Backspace` delete, `Esc` quit |
-| Menu | `Up`/`Down` choose (the list scrolls), `1`-`6` run directly, `Enter` run, `Esc` quit |
+| Menu | `Up`/`Down` or `W`/`S` choose (the list scrolls), `1`-`6` run directly, `Enter` run, `Esc` quit |
 | Confirm | `Up`/`Down` scroll, `Enter` download + install, `Esc` back |
 | Progress | `Esc` cancel (checking and downloading only; never mid-install) |
 | Result | `Up`/`Down` scroll, `Enter`/`Esc` back to menu |
@@ -407,7 +407,7 @@ By default, the debian package is copied to '$HOME' folder, normally it's under 
 On your device, install the copied package with `apt` and replace the package file name with the one you copied:
 
 ```shell
-sudo apt install --no-install-recommends ./Updoit For Cardputer Zero_0.2.1_rev1_arm64.deb
+sudo apt install --no-install-recommends ./updoit-for-cardputer-zero_0.2.1_rev1_arm64.deb
 ```
 
 
@@ -456,13 +456,13 @@ cmake --preset darwin-arm64 -DAPP_ASSETS_ROOT=/path/to/assets
 Debian packages are produced with CPack and written to `dist/`. The package file name follows:
 
 ```text
-<AppName>_<Version>_<Revision>_arm64.deb
+<package-name>_<Version>_<Revision>_arm64.deb
 ```
 
 Default example:
 
 ```text
-dist/Updoit For Cardputer Zero_0.2.1_rev1_arm64.deb
+dist/updoit-for-cardputer-zero_0.2.1_rev1_arm64.deb
 ```
 
 Package layout:
