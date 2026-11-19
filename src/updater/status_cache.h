@@ -10,17 +10,23 @@
 
 namespace updater {
 
-constexpr const char* kStatusCachePath = "/run/updoit/apt_updates";
+constexpr const char* kStatusCachePath = "/etc/updoit.status";
 
 // Written by updoit-check (root, systemd timer). Format, one key=value per line:
-//   checked=<unix seconds>
-//   upgradable=<count>
+//   checked=<unix seconds>            when the counts were made
+//   updated=<unix seconds, optional>  last successful apt-get update
+//   upgradable=<count>                apt-get upgrade
+//   full_upgradable=<count>           apt-get dist-upgrade
+//   autoremovable=<count>             apt-get autoremove
 //   packages=<space separated names>
 //   error=<message, optional>
 struct StatusCache {
     bool valid = false;
     int64_t checked = 0;
+    int64_t updated = 0; // 0 = unknown
     int upgradable = 0;
+    int full_upgradable = 0;
+    int autoremovable = 0;
     std::vector<std::string> packages;
     std::string error;
 };

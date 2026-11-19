@@ -25,6 +25,15 @@ StatusCache parse_status_cache(const std::string& text) {
         if (key == "checked") {
             cache.checked = std::strtoll(value.c_str(), nullptr, 10);
         }
+        else if (key == "updated") {
+            cache.updated = std::strtoll(value.c_str(), nullptr, 10);
+        }
+        else if (key == "full_upgradable") {
+            cache.full_upgradable = std::atoi(value.c_str());
+        }
+        else if (key == "autoremovable") {
+            cache.autoremovable = std::atoi(value.c_str());
+        }
         else if (key == "upgradable") {
             cache.upgradable = std::atoi(value.c_str());
             has_count = true;

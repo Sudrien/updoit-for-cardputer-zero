@@ -63,7 +63,7 @@ thread that the UI polls every 100 ms.
 | `/usr/libexec/updoit/updoit-cli` | headless driver, useful over SSH |
 | `/lib/systemd/system/updoit-check.{service,timer}` | 10 min after boot, then daily |
 | `/etc/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
-| `/run/updoit/apt_updates` | cached count, written by the check |
+| `/etc/updoit.status` | cached counts (upgrade, full-upgrade, autoremove) and last update time, written by the check; in `/etc` so it survives reboots |
 | `/usr/share/updoit/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
 | `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; not owned by the package, swapped by the check |
 

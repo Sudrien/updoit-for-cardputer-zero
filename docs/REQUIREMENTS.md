@@ -7,7 +7,7 @@ A 320x170 LVGL app that runs apt updates on the device. Keyboard-driven (46-key 
 1. **Periodic `apt update`** in the background, modelled on DietPi's
    `CONFIG_CHECK_APT_UPDATES` (daily cron job, result cached for the login banner):
    - A root systemd timer (daily, randomized delay) runs `apt-get update` and writes the
-     upgradable count/list to `/run/updoit/apt_updates`. The app only reads this file.
+     upgradable count/list to `/etc/updoit.status`. The app only reads this file.
    - Setting `UPDOIT_CHECK_APT_UPDATES`: `0` = off, `1` = check only (default),
      `2` = check and upgrade automatically (planned).
 2. **Operation picker** when the app is opened:

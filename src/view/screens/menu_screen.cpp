@@ -55,8 +55,8 @@ void MenuScreen::build_content(lv_obj_t* content) {
         auto* name = style::label(row, dark, style::font(assets(), 14, true), text);
         lv_obj_align(name, LV_ALIGN_LEFT_MID, 0, 0);
 
-        auto* hint = style::label(row, dark, style::font(assets(), 12),
-                                  viewmodel::BaseViewModel::menu_hint(i));
+        auto* hint = style::label(row, dark, style::font(assets(), 12));
+        reactive::bind_label_text(hint, view_model().menu_hint_subject(i));
         lv_obj_align(hint, LV_ALIGN_RIGHT_MID, 0, 0);
         style::accent(hint, dark, style::Accent::Part::Text, style::Accent::Tone::Muted);
 

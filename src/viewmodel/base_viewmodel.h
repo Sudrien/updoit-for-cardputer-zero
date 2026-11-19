@@ -61,7 +61,7 @@ public:
     lv_subject_t* menu_index_subject();
     lv_subject_t* updates_text_subject();
     static const char* menu_label(int index);
-    static const char* menu_hint(int index);
+    lv_subject_t* menu_hint_subject(int index);
     void menu_move(int delta);
     void menu_select(int index = -1);
 
@@ -121,6 +121,7 @@ private:
     reactive::StringSubject<48> progress_title_subject_;
     reactive::StringSubject<96> progress_detail_subject_;
     reactive::IntSubject progress_value_subject_;
+    reactive::StringSubject<24> menu_hint_subject_[model::kMenuItemCount];
     reactive::StringSubject<64> file_name_subject_[kFileSlots];
     reactive::IntSubject file_value_subject_[kFileSlots];
     reactive::StringSubject<128> log_line_subject_;

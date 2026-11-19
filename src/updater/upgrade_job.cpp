@@ -413,7 +413,9 @@ void UpgradeJob::execute_worker(Operation op) {
     // 4. Refresh the cached "updates available" count for the launcher/menu.
     std::error_code ec;
     if (fs::exists(config_.status_helper, ec)) {
-        run_privileged({config_.status_helper, "--no-update"}, false);
+        // After "Refresh lists" the lists are new: have the helper stamp the update time.
+        run_privileged({config_.status_helper, op == Operation::Refresh ? "--updated" : "--no-update"},
+                       false);
     }
 
     std::lock_guard<std::mutex> lock(mutex_);

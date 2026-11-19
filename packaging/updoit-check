@@ -7,15 +7,18 @@
 #   updoit-check              run from updoit-check.timer; honours /etc/updoit.conf
 #   updoit-check --no-update  only recount from the current lists (used by the app
 #                             after an upgrade)
+#   updoit-check --updated    like --no-update, but record that the lists were just
+#                             refreshed (used by the app after "Refresh lists")
 #
-# Output: /run/updoit/apt_updates (key=value, see src/updater/status_cache.h)
+# Output: /etc/updoit.status (key=value, see src/updater/status_cache.h). It lives in /etc
+#         so the counts and the last update time survive a reboot.
 #         and the launcher icon with a red count badge (see update_icon below).
 
 set -u
 
 CONF=/etc/updoit.conf
-OUT_DIR=/run/updoit
-OUT="$OUT_DIR/apt_updates"
+OUT=${UPDOIT_STATUS_FILE:-/etc/updoit.status}
+OUT_DIR=$(dirname "$OUT")
 
 # Launcher integration (overridable for testing).
 APPLAUNCH_DIR=${UPDOIT_APPLAUNCH_DIR:-/usr/share/APPLaunch}
@@ -46,7 +49,14 @@ update_icon() { # $1 = upgradable count
 }
 
 no_update=0
-[ "${1:-}" = "--no-update" ] && no_update=1
+stamp_updated=0
+case "${1:-}" in
+    --no-update) no_update=1 ;;
+    --updated) no_update=1 stamp_updated=1 ;;
+esac
+
+# Value of a key in the previous status file (empty if none).
+old_value() { sed -n "s/^$1=//p" "$OUT" 2>/dev/null | tail -n 1; }
 
 # 0 = off, 1 = check only (default), 2 = check and upgrade automatically (planned)
 level=1
@@ -62,24 +72,33 @@ fi
 export LC_ALL=C LANG=C DEBIAN_FRONTEND=noninteractive
 
 error=""
+updated=$(old_value updated)
+[ "$stamp_updated" -eq 1 ] && updated=$(date +%s)
 if [ "$no_update" -eq 0 ]; then
-    if ! apt-get -qq -o DPkg::Lock::Timeout=300 update >/dev/null 2>"$OUT_DIR.err.$$"; then
-        error=$(grep '^E:' "$OUT_DIR.err.$$" | head -n 1 | tr -d '\n')
+    if ! apt-get -qq -o DPkg::Lock::Timeout=300 update >/dev/null 2>"$OUT.err.$$"; then
+        error=$(grep '^E:' "$OUT.err.$$" | head -n 1 | tr -d '\n')
         [ -n "$error" ] || error="apt-get update failed"
     fi
-    rm -f "$OUT_DIR.err.$$"
+    rm -f "$OUT.err.$$"
+    [ -z "$error" ] && updated=$(date +%s)
 fi
 
-packages=$(apt-get -s -o Debug::NoLocking=1 upgrade 2>/dev/null | awk '/^Inst /{print $2}' | tr '\n' ' ')
+# Simulate each menu operation and count the packages it would touch.
+sim() { apt-get -s -o Debug::NoLocking=1 "$@" 2>/dev/null; }
+packages=$(sim upgrade | awk '/^Inst /{print $2}' | tr '\n' ' ')
 count=0
 for p in $packages; do count=$((count + 1)); done
+full_count=$(sim dist-upgrade | awk '/^Inst /{n++} END{print n+0}')
+remove_count=$(sim autoremove | awk '/^Remv /{n++} END{print n+0}')
 
 mkdir -p "$OUT_DIR"
-chmod 755 "$OUT_DIR"
 tmp="$OUT.tmp.$$"
 {
     echo "checked=$(date +%s)"
+    [ -n "$updated" ] && echo "updated=$updated"
     echo "upgradable=$count"
+    echo "full_upgradable=$full_count"
+    echo "autoremovable=$remove_count"
     echo "packages=${packages% }"
     [ -n "$error" ] && echo "error=$error"
 } >"$tmp"

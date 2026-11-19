@@ -93,6 +93,8 @@ BaseViewModel::BaseViewModel()
       password_busy_subject_(false),
       menu_index_subject_(0),
       updates_text_subject_(""),
+      menu_hint_subject_{reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
+                         reactive::StringSubject<24>(""), reactive::StringSubject<24>("")},
       confirm_summary_subject_(""),
       progress_title_subject_(""),
       progress_detail_subject_(""),
@@ -284,19 +286,8 @@ const char* BaseViewModel::menu_label(int index) {
     return updater::operation_label(kMenuOps[index]);
 }
 
-const char* BaseViewModel::menu_hint(int index) {
-    switch (index) {
-        case 0:
-            return "apt upgrade";
-        case 1:
-            return "apt full-upgrade";
-        case 2:
-            return "apt autoremove";
-        case 3:
-            return "apt update";
-        default:
-            return "";
-    }
+lv_subject_t* BaseViewModel::menu_hint_subject(int index) {
+    return menu_hint_subject_[index].native();
 }
 
 void BaseViewModel::refresh_updates_text() {
@@ -322,6 +313,16 @@ void BaseViewModel::refresh_updates_text() {
         }
     }
     updates_text_subject_.set(text.c_str());
+
+    // Per-row hints: how many packages each operation would touch (cached by updoit-check).
+    const auto count_text = [&](int n) {
+        return !cache.valid ? std::string("?") : n == 0 ? std::string("none") : std::to_string(n) + " pkg" + (n == 1 ? "" : "s");
+    };
+    menu_hint_subject_[0].set(count_text(cache.upgradable).c_str());
+    menu_hint_subject_[1].set(count_text(cache.full_upgradable).c_str());
+    menu_hint_subject_[2].set(count_text(cache.autoremovable).c_str());
+    const auto updated = age_text(cache.updated);
+    menu_hint_subject_[3].set(updated.empty() ? "never updated" : updated.c_str());
 }
 
 void BaseViewModel::menu_move(int delta) {

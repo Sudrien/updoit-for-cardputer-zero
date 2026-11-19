@@ -98,6 +98,9 @@ void test_status_cache() {
     CHECK(c.checked == 1763560000);
     CHECK(c.upgradable == 3);
     CHECK(c.packages.size() == 3);
+    const auto d = parse_status_cache("checked=5\nupdated=4\nupgradable=1\nfull_upgradable=7\nautoremovable=2\n");
+    CHECK(d.updated == 4 && d.full_upgradable == 7 && d.autoremovable == 2);
+    CHECK(parse_status_cache("upgradable=1\n").updated == 0);
     CHECK(!parse_status_cache("").valid);
 }
 
