@@ -18,6 +18,7 @@ constexpr const char* kStatusCachePath = "/etc/updoit.status";
 //   upgradable=<count>                apt-get upgrade
 //   full_upgradable=<count>           apt-get dist-upgrade
 //   autoremovable=<count>             apt-get autoremove
+//   cache_bytes=<bytes, optional>     size of /var/cache/apt/archives (apt-get clean)
 //   packages=<space separated names>
 //   error=<message, optional>
 struct StatusCache {
@@ -27,6 +28,8 @@ struct StatusCache {
     int upgradable = 0;
     int full_upgradable = 0;
     int autoremovable = 0;
+    bool has_cache_bytes = false;
+    uint64_t cache_bytes = 0;
     std::vector<std::string> packages;
     std::string error;
 };

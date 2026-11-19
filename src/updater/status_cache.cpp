@@ -31,6 +31,10 @@ StatusCache parse_status_cache(const std::string& text) {
         else if (key == "full_upgradable") {
             cache.full_upgradable = std::atoi(value.c_str());
         }
+        else if (key == "cache_bytes") {
+            cache.cache_bytes = std::strtoull(value.c_str(), nullptr, 10);
+            cache.has_cache_bytes = true;
+        }
         else if (key == "autoremovable") {
             cache.autoremovable = std::atoi(value.c_str());
         }

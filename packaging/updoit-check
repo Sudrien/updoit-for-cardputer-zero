@@ -91,6 +91,10 @@ for p in $packages; do count=$((count + 1)); done
 full_count=$(sim dist-upgrade | awk '/^Inst /{n++} END{print n+0}')
 remove_count=$(sim autoremove | awk '/^Remv /{n++} END{print n+0}')
 
+# Space held by apt's package cache (what "apt-get clean" frees).
+cache_bytes=$(find /var/cache/apt/archives -maxdepth 2 -type f -name '*.deb' -printf '%s\n' 2>/dev/null |
+    awk '{n += $1} END{print n+0}')
+
 mkdir -p "$OUT_DIR"
 tmp="$OUT.tmp.$$"
 {
@@ -99,6 +103,7 @@ tmp="$OUT.tmp.$$"
     echo "upgradable=$count"
     echo "full_upgradable=$full_count"
     echo "autoremovable=$remove_count"
+    echo "cache_bytes=$cache_bytes"
     echo "packages=${packages% }"
     [ -n "$error" ] && echo "error=$error"
 } >"$tmp"

@@ -67,6 +67,8 @@ const char* operation_label(Operation op) {
             return "Autoremove";
         case Operation::Refresh:
             return "Refresh lists";
+        case Operation::Clean:
+            return "Clean caches";
     }
     return "";
 }
@@ -81,12 +83,18 @@ const char* operation_apt_verb(Operation op) {
             return "autoremove";
         case Operation::Refresh:
             return "update";
+        case Operation::Clean:
+            return "clean";
     }
     return "";
 }
 
 bool operation_downloads(Operation op) {
     return op == Operation::Upgrade || op == Operation::FullUpgrade;
+}
+
+bool operation_is_direct(Operation op) {
+    return op == Operation::Refresh || op == Operation::Clean;
 }
 
 int Plan::upgrades() const {

@@ -34,6 +34,19 @@ void wipe(std::string& s) {
     s.clear();
 }
 
+uint64_t dir_bytes(const std::string& path) {
+    uint64_t total = 0;
+    std::error_code ec;
+    fs::recursive_directory_iterator it(path, fs::directory_options::skip_permission_denied, ec);
+    for (; !ec && it != fs::recursive_directory_iterator(); it.increment(ec)) {
+        std::error_code fec;
+        if (it->is_regular_file(fec)) {
+            total += static_cast<uint64_t>(it->file_size(fec));
+        }
+    }
+    return total;
+}
+
 uint64_t free_bytes(const std::string& path) {
     struct statvfs st {};
     if (::statvfs(path.c_str(), &st) != 0) {
@@ -118,7 +131,7 @@ bool UpgradeJob::start(Operation op) {
         plan_ = Plan{};
         downloads_.clear();
     }
-    if (op == Operation::Refresh) {
+    if (operation_is_direct(op)) {
         worker_ = std::thread(&UpgradeJob::execute_worker, this, op);
     }
     else {
@@ -328,6 +341,9 @@ void UpgradeJob::execute_worker(Operation op) {
     }
     const std::string verb = operation_apt_verb(op);
 
+    const uint64_t cache_before =
+        op == Operation::Clean ? dir_bytes(config_.apt_archives) + dir_bytes(config_.download_dir) : 0;
+
     // 1. Parallel download, unprivileged, into the staging directory.
     std::vector<std::string> staged;
     std::vector<DownloadItem> items;
@@ -408,6 +424,18 @@ void UpgradeJob::execute_worker(Operation op) {
     if (!run_privileged({"sh", "-c", apt_cmd}, true)) {
         fail("apt-get " + verb + " failed; see log");
         return;
+    }
+
+    if (op == Operation::Clean) {
+        // Also drop Updoit's own staged/partial downloads (unprivileged).
+        std::error_code rec;
+        for (const auto& entry : fs::directory_iterator(config_.download_dir, rec)) {
+            std::error_code dec;
+            fs::remove_all(entry.path(), dec);
+        }
+        const uint64_t cache_after = dir_bytes(config_.apt_archives) + dir_bytes(config_.download_dir);
+        std::lock_guard<std::mutex> lock(mutex_);
+        state_.freed_bytes = cache_before > cache_after ? cache_before - cache_after : 0;
     }
 
     // 4. Refresh the cached "updates available" count for the launcher/menu.

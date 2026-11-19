@@ -15,11 +15,14 @@ enum class Operation {
     FullUpgrade, // apt-get dist-upgrade
     Autoremove,  // apt-get autoremove
     Refresh,     // apt-get update
+    Clean,       // apt-get clean (frees the package cache)
 };
 
 const char* operation_label(Operation op);
 const char* operation_apt_verb(Operation op);
 bool operation_downloads(Operation op);
+// True for operations that skip the plan/confirm step and run straight away.
+bool operation_is_direct(Operation op);
 
 // ---- `apt-get -s <verb>` -------------------------------------------------------------
 

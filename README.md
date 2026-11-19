@@ -10,8 +10,8 @@
 
 ## What it does
 
-- **Upgrade, Full upgrade, Autoremove, Refresh lists** (`apt-get upgrade`, `dist-upgrade`,
-  `autoremove`, `update`) from a keyboard-driven 320x170 UI.
+- **Upgrade, Full upgrade, Autoremove, Refresh lists, Clean caches** (`apt-get upgrade`,
+  `dist-upgrade`, `autoremove`, `update`, `clean`) from a keyboard-driven 320x170 UI.
 - **Confirm first**: shows what will be upgraded, installed, removed or kept back, and the
   download size, before anything changes.
 - **Parallel downloads** with `aria2c` (4 files at once, 2 connections each), with overall
@@ -32,7 +32,7 @@ guard, reboot prompt, network check, auto-upgrade, pipelined download+install).
 | Page | Keys |
 | --- | --- |
 | Password | type, `Enter` unlock, `Backspace` delete, `Esc` quit |
-| Menu | `Up`/`Down` choose, `1`-`4` run directly, `Enter` run, `Esc` quit |
+| Menu | `Up`/`Down` choose, `1`-`5` run directly, `Enter` run, `Esc` quit |
 | Confirm | `Up`/`Down` scroll, `Enter` download + install, `Esc` back |
 | Progress | `Esc` cancel (checking and downloading only; never mid-install) |
 | Result | `Up`/`Down` scroll, `Enter`/`Esc` back to menu |
@@ -78,6 +78,7 @@ Depends on `apt`, `aria2` and `sudo`.
 ## Testing without the GUI
 
 ```shell
+updoit-cli clean                      # free the apt package cache (no confirm step)
 updoit-cli upgrade --plan-only        # show the plan, change nothing
 updoit-cli upgrade                    # prompts for the sudo password, then asks to proceed
 updoit-cli full-upgrade --yes --limit=500K

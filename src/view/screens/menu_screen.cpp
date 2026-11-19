@@ -35,7 +35,7 @@ void MenuScreen::build_content(lv_obj_t* content) {
     lv_obj_set_flex_flow(column, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_hor(column, 8, 0);
     lv_obj_set_style_pad_top(column, 3, 0);
-    lv_obj_set_style_pad_row(column, 1, 0);
+    lv_obj_set_style_pad_row(column, 0, 0);
 
     auto* status = style::label(column, dark, style::font(assets(), 12));
     reactive::bind_label_text(status, view_model().updates_text_subject());
@@ -43,7 +43,7 @@ void MenuScreen::build_content(lv_obj_t* content) {
 
     for (int i = 0; i < model::kMenuItemCount; ++i) {
         auto* row = style::box(column);
-        lv_obj_set_size(row, LV_PCT(100), 21);
+        lv_obj_set_size(row, LV_PCT(100), 17); // five rows fit the 110 px content area
         lv_obj_set_style_radius(row, 4, 0);
         lv_obj_set_style_pad_hor(row, 6, 0);
         lv_obj_set_style_bg_opa(row, LV_OPA_TRANSP, 0);

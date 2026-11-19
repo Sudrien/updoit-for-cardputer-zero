@@ -101,6 +101,9 @@ void test_status_cache() {
     const auto d = parse_status_cache("checked=5\nupdated=4\nupgradable=1\nfull_upgradable=7\nautoremovable=2\n");
     CHECK(d.updated == 4 && d.full_upgradable == 7 && d.autoremovable == 2);
     CHECK(parse_status_cache("upgradable=1\n").updated == 0);
+    const auto e = parse_status_cache("upgradable=0\ncache_bytes=1048576\n");
+    CHECK(e.has_cache_bytes && e.cache_bytes == 1048576);
+    CHECK(!parse_status_cache("upgradable=0\n").has_cache_bytes);
     CHECK(!parse_status_cache("").valid);
 }
 

@@ -78,6 +78,7 @@ constexpr Operation kMenuOps[model::kMenuItemCount] = {
     Operation::FullUpgrade,
     Operation::Autoremove,
     Operation::Refresh,
+    Operation::Clean,
 };
 
 } // namespace
@@ -94,7 +95,8 @@ BaseViewModel::BaseViewModel()
       menu_index_subject_(0),
       updates_text_subject_(""),
       menu_hint_subject_{reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
-                         reactive::StringSubject<24>(""), reactive::StringSubject<24>("")},
+                         reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
+                         reactive::StringSubject<24>("")},
       confirm_summary_subject_(""),
       progress_title_subject_(""),
       progress_detail_subject_(""),
@@ -323,6 +325,10 @@ void BaseViewModel::refresh_updates_text() {
     menu_hint_subject_[2].set(count_text(cache.autoremovable).c_str());
     const auto updated = age_text(cache.updated);
     menu_hint_subject_[3].set(updated.empty() ? "never updated" : updated.c_str());
+    menu_hint_subject_[4].set(!cache.valid || !cache.has_cache_bytes
+                                  ? "?"
+                                  : (cache.cache_bytes == 0 ? "empty"
+                                                            : updater::format_bytes(cache.cache_bytes).c_str()));
 }
 
 void BaseViewModel::menu_move(int delta) {
@@ -338,7 +344,9 @@ void BaseViewModel::menu_select(int index) {
     const auto op = kMenuOps[model_.menu_index()];
     if (job_->start(op)) {
         // The first snapshot moves us on; show the progress page while planning.
-        progress_title_subject_.set(op == Operation::Refresh ? "Refreshing lists" : "Checking");
+        progress_title_subject_.set(op == Operation::Refresh ? "Refreshing lists"
+                                    : op == Operation::Clean ? "Cleaning caches"
+                                                             : "Checking");
         progress_detail_subject_.set(updater::operation_apt_verb(op));
         progress_value_subject_.set(0);
         log_line_subject_.set("");
@@ -439,6 +447,7 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
                 }
             }
             progress_title_subject_.set(s.operation == Operation::Refresh ? "Refreshing lists"
+                                        : s.operation == Operation::Clean ? "Cleaning caches"
                                                                           : "Installing");
             progress_detail_subject_.set(s.install_status.empty() ? "Starting apt..."
                                                                   : s.install_status.c_str());
@@ -457,13 +466,18 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
             std::string text;
             if (s.phase == Phase::Done) {
                 result_title_subject_.set(s.operation == Operation::Refresh ? "Lists refreshed"
+                                          : s.operation == Operation::Clean ? "Caches cleaned"
                                                                             : "Done");
                 result_tone_subject_.set(0);
-                if (s.upgrades + s.new_installs + s.removals == 0 &&
+                if (s.operation == Operation::Clean) {
+                    text = s.freed_bytes ? "Freed " + updater::format_bytes(s.freed_bytes) + "."
+                                         : "Nothing to clean.";
+                }
+                else if (s.upgrades + s.new_installs + s.removals == 0 &&
                     s.operation != Operation::Refresh) {
                     text = "Nothing to do.";
                 }
-                else if (s.operation != Operation::Refresh) {
+                else if (!updater::operation_is_direct(s.operation)) {
                     text = std::to_string(s.upgrades) + " upgraded";
                     if (s.new_installs) {
                         text += ", " + std::to_string(s.new_installs) + " installed";
