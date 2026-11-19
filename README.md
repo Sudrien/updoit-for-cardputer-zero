@@ -1,101 +1,91 @@
 <p align="center">
-  <picture>
-    <source
-      media="(prefers-color-scheme: dark)"
-      srcset="./screenshot/app-simulator-dark-darwin.png"
-    />
-    <source
-      media="(prefers-color-scheme: light)"
-      srcset="./screenshot/app-simulator-light-darwin.png"
-    />
-  <img
-    src="./screenshot/app-simulator-light-darwin.png"
-    alt="CardputerZero Template running in the desktop simulator"
-    width="315"
-  />
-  </picture>
+  <img src="./screenshot/updoit-menu.png" alt="Updoit menu" width="320" />
+  <img src="./screenshot/updoit-download.png" alt="Updoit downloading packages in parallel" width="320" />
 </p>
 
 <div align="center">
-    <h1>CardputerZero Application Template</h1>
+    <h1>Updoit for CardputerZero</h1>
+    <p>apt updates from the CardputerZero launcher, with parallel downloads.</p>
 </div>
 
-<div align="center">
-  <p>A simple starter template for building embedded Linux GUI applications with LVGL and CMake.</p>
-</div>
+## What it does
 
-<p align="center" style="margin: 20px 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;">
-  <img src="https://img.shields.io/badge/SDL3-173B73?style=flat-square&logo=sdl&logoColor=white" alt="SDL3" />
-  <img src="https://img.shields.io/badge/CMake-064F8C?style=flat-square&logo=cmake&logoColor=white" alt="CMake" />
-  <img src="https://img.shields.io/badge/LVGL-2A9FD6?style=flat-square&logo=lvgl&logoColor=white" alt="LVGL" />
-  <img src="https://img.shields.io/badge/Raspberry%20Pi-A22846?style=flat-square&logo=raspberrypi&logoColor=white" alt="Raspberry Pi" />
-</p>
+- **Upgrade, Full upgrade, Autoremove, Refresh lists** (`apt-get upgrade`, `dist-upgrade`,
+  `autoremove`, `update`) from a keyboard-driven 320x170 UI.
+- **Confirm first**: shows what will be upgraded, installed, removed or kept back, and the
+  download size, before anything changes.
+- **Parallel downloads** with `aria2c` (4 files at once, 2 connections each), with overall
+  and per-file progress. Downloads finish and are verified before apt installs anything, so a
+  dropped connection leaves the system untouched. Cancelled downloads resume next time.
+- **Install progress** from apt's own status output.
+- **Daily background check** like DietPi's `CONFIG_CHECK_APT_UPDATES`: a systemd timer counts
+  pending upgrades, and the menu shows the result instantly.
+- **sudo password** asked on launch (skipped when running as root or with passwordless sudo),
+  kept in memory only and never written anywhere.
 
-<p align="center">
-  <a href="https://discord.gg/ysQAWBUE9Q">
-    <img
-      src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=flat-square&logo=discord&logoColor=white"
-      alt="Join Discord"
-    />
-  </a>
-</p>
-It is intended to be used as a clean development baseline: desktop builds use an SDL hardware-accelerated compositor for fast UI preview, while device builds use the Linux/LVGL platform drivers.
+See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) for scope and planned features (battery
+guard, reboot prompt, network check, auto-upgrade, pipelined download+install).
 
-## Project Overview
+## Keys
 
-In this example project, we used small MVVM-style structure around LVGL:
+| Page | Keys |
+| --- | --- |
+| Password | type, `Enter` unlock, `Backspace` delete, `Esc` quit |
+| Menu | `Up`/`Down` choose, `1`-`4` run directly, `Enter` run, `Esc` quit |
+| Confirm | `Up`/`Down` scroll, `Enter` download + install, `Esc` back |
+| Progress | `Esc` cancel (checking and downloading only; never mid-install) |
+| Result | `Up`/`Down` scroll, `Enter`/`Esc` back to menu |
 
-- **UI layer**: screens and widgets are implemented with LVGL objects. `BaseScreen` owns the page root, title bar, nav bar, and page content. Widgets derive from `BaseWidgets` and expose a `build()` entry point.
-- **Data model**: `BaseModel` stores application state such as current page and theme mode.
-- **View model**: `BaseViewModel` exposes model state as LVGL observer subjects and provides UI actions such as page switching, counter updates, theme toggle, and quit request.
-- **Reactive/data binding**: `src/reactive` wraps LVGL observer subjects and common bindings so labels, styles, flags, widget values, and events can be connected to application state.
-- **Data flow**: user input triggers widget callbacks, callbacks update `BaseViewModel`, view model publishes subjects, and bound UI objects refresh automatically through LVGL observers.
-- **Platform layer**: platform code owns Linux input integration and other hardware-facing services. The nav bar maps hardware/keyboard keys `4` to `8`, plus `ESC` for quit.
+Hold `Esc` to quit from anywhere except during install. `Fn`+`H` shows help.
 
-Current demo UI:
+## How it works
 
-- Page 1: Hello World, font weight toggle, LVGL version info, light/dark theme toggle, page navigation.
-- Page 2: Counter page, increment/decrement actions, simple page navigation.
+1. **Plan** (as your user): `apt-get -s <verb>` for the list, `apt-get --print-uris <verb>`
+   for URLs, sizes and hashes.
+2. **Download** (as your user): `aria2c` fetches into `~/.cache/updoit/archives` with
+   checksums. Progress is read from the files on disk, not aria2's console.
+3. **Install** (as root): the files are moved into `/var/cache/apt/archives` (a rename on the
+   same filesystem) and owned by root, then `apt-get <verb>` runs. apt re-checks every hash and
+   reports `Need to get 0 B`. Status is read on fd 3; using `APT::Status-Fd=1` breaks maintainer
+   scripts that print to stdout.
+4. **Recount**: `/usr/libexec/updoit/updoit-check --no-update` refreshes the menu's count.
 
-## Repository Layout
+The backend (`src/updater/`) is plain C++17 with no LVGL dependency, and runs on a worker
+thread that the UI polls every 100 ms.
 
-```text
-.
-├── assets/                 # Runtime assets used by the app
-│   ├── applications/       # Desktop/app launcher metadata
-│   ├── audio/              # Audio resources
-│   ├── fonts/              # TTF fonts loaded through FreeType
-│   └── images/             # Image resources
-├── screenshot/             # Simulator screenshots for supported desktop platforms
-├── src/
-│   ├── app/                # Application lifecycle, asset loading, screen management
-│   ├── config/             # LVGL config headers for desktop and device builds
-│   ├── logger/             # Project logging wrapper
-│   ├── model/              # Base application data model
-│   ├── platform/           # Platform input/hardware integration
-│   ├── reactive/           # LVGL observer subjects and binding helpers
-│   ├── view/               # Theme, UI constants, screens, and widgets
-│   │   ├── screens/        # Page-level LVGL screens
-│   │   └── widgets/        # Reusable LVGL widgets such as nav bar and icon button
-│   ├── viewmodel/          # BaseViewModel and UI-facing actions/state subjects
-│   └── main.cpp            # Program entry point
-├── CMakeLists.txt          # Build graph, dependencies, options, targets
-├── CMakePresets.json       # Desktop/device configure and build presets
-└── README.md
+## Installed files
+
+| Path | Purpose |
+| --- | --- |
+| `/usr/bin/updoit-for-cardputer-zero` | the app (started by the launcher) |
+| `/usr/libexec/updoit/updoit-check` | daily check script |
+| `/usr/libexec/updoit/updoit-cli` | headless driver, useful over SSH |
+| `/lib/systemd/system/updoit-check.{service,timer}` | 10 min after boot, then daily |
+| `/etc/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
+| `/run/updoit/apt_updates` | cached count, written by the check |
+
+Depends on `apt`, `aria2` and `sudo`.
+
+## Testing without the GUI
+
+```shell
+updoit-cli upgrade --plan-only        # show the plan, change nothing
+updoit-cli upgrade                    # prompts for the sudo password, then asks to proceed
+updoit-cli full-upgrade --yes --limit=500K
 ```
 
-### Modules
+`UPDOIT_DOWNLOAD_LIMIT=500K` limits the app's download rate (aria2 syntax), for slow links or
+for watching the progress screen.
 
-- `src/app/asset_manager.*`: resolves runtime assets from the optional CMake asset root, source tree `assets/`, and installed `/usr/share/<APP_NAME>/` path.
-- `src/app/screen_namager.cpp`: switches LVGL screens when the current page subject changes.
-- `src/app/desktop_simulator_frame.*`: owns the desktop SDL window, renderer, high-resolution shell textures, input, and LVGL texture composition.
-- `src/config/lv_conf_desktop.h`: desktop LVGL rendering settings.
-- `src/config/lv_conf_cm0.h`: embedded Linux/CardputerZero LVGL settings.
-- `src/platform/linux_input.*`: Linux evdev keypad support and desktop SDL keyboard routing for nav buttons.
-- `src/reactive/subjects.*`: typed wrappers around LVGL subjects.
-- `src/reactive/bindings.*`: helper bindings for labels, theme, widget values, flags, states, and events.
-- `src/view/widgets/navbar.*`: bottom navigation bar and icon-button action mapping.
-- `src/view/widgets/icon_button.*`: transparent icon button with font/color/theme support.
+Parser tests: `ctest --test-dir build/linux-x86-64 -C Debug`.
+
+## Status
+
+Tested on an Ubuntu 24.04 amd64 host in the desktop simulator, as a sudo user with a password:
+wrong/right password, upgrade with real packages, cancel and resume of downloads, autoremove,
+refresh, light and dark themes. **Not yet tested on CardputerZero hardware.** Things to check
+there: the device keyboard (shift and symbol layers for passwords), how the launcher starts
+apps (as which user), and whether `aria2` is available for the device image.
 
 ## Build Options
 
@@ -407,27 +397,6 @@ sudo apt install --no-install-recommends ./Updoit For Cardputer Zero_0.2.1_rev1_
 
 
 ## Development Guide
-
-### Navigation Keys
-
-The first page bottom nav bar maps hardware/keyboard keys from left to right:
-
-| Key | Nav item |
-| --- | --- |
-| `4` | First icon button |
-| `5` | Second icon button |
-| `6` | Third icon button |
-| `7` | Fourth icon button |
-| `8` | Fifth icon button |
-| `ESC` | First icon button / quit |
-
-The counter page uses direct keyboard shortcuts:
-
-| Key | Action |
-| --- | --- |
-| `ESC` | Return to the first page |
-| `Left` | Decrease the counter |
-| `Right` | Increase the counter |
 
 ### Adding a Screen
 
