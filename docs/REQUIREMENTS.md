@@ -2,14 +2,14 @@
 
 A 320x170 LVGL app that runs apt updates on the device. Keyboard-driven (46-key matrix).
 
-## v1 (in scope)
+## v0.1.0 (in scope)
 
 1. **Periodic `apt update`** in the background, modelled on DietPi's
    `CONFIG_CHECK_APT_UPDATES` (daily cron job, result cached for the login banner):
    - A root systemd timer (daily, randomized delay) runs `apt-get update` and writes the
      upgradable count/list to `/run/updoit/apt_updates`. The app only reads this file.
    - Setting `UPDOIT_CHECK_APT_UPDATES`: `0` = off, `1` = check only (default),
-     `2` = check and upgrade automatically (planned, not v1).
+     `2` = check and upgrade automatically (planned).
 2. **Operation picker** when the app is opened:
    - `apt upgrade`
    - `apt full-upgrade`
@@ -24,10 +24,23 @@ A 320x170 LVGL app that runs apt updates on the device. Keyboard-driven (46-key 
 6. **Parallel downloads** via `aria2` (package dependency), apt-fast style: the download
    list comes from `apt-get --print-uris`, aria2c fetches into `/var/cache/apt/archives`
    and checksums are verified against the URIs' hashes.
-7. **Pipelined download + install**: installing starts while later packages are still
-   downloading. See "Pipeline design".
+7. **Download first, then install**: all downloads must finish and verify before
+   `apt-get <op>` runs, so a dropped connection leaves the system untouched (same safety
+   model as apt).
 
-## Pipeline design
+## Planned (not in v0.1.0)
+
+- Battery / power guard (warn or refuse below a threshold unless on USB-C).
+- Reboot prompt when `/var/run/reboot-required` exists.
+- Network check before starting.
+- Auto-upgrade (`UPDOIT_CHECK_APT_UPDATES=2`).
+- **Pipelined download + install** as an opt-in setting (default stays
+  download-everything-first). Trade-off: faster, but a dropped connection mid-run leaves
+  a partial (consistent but mixed) upgrade until the run is finished; per-package dpkg
+  calls also lose apt's batched trigger handling. Possible middle ground: start installing
+  only once most downloads are done. Draft design below.
+
+### Pipeline design (draft, future)
 
 Two worker threads plus the UI thread:
 
@@ -51,17 +64,10 @@ Two worker threads plus the UI thread:
 - **Fallback**: if the plan cannot be parsed, run aria2 downloads to completion, then a
   plain `apt-get <op>` (no pipelining).
 
-## Planned (not in v1)
-
-- Battery / power guard (warn or refuse below a threshold unless on USB-C).
-- Reboot prompt when `/var/run/reboot-required` exists.
-- Network check before starting.
-
 ## Open questions
 
 - Whether to skip the background check on battery.
 - Confirm `aria2` is available for the device's Debian release (arm64).
-- Verify pipelined installs on-device with a large upgrade before relying on it.
 - Whether the launcher passes keyboard focus cleanly for password entry.
 
 ## Manifest implications (`app-builder.json`)
