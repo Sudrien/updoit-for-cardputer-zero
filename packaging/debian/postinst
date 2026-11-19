@@ -5,6 +5,11 @@ if [ "$1" = "configure" ] && [ -d /run/systemd/system ]; then
     systemctl enable updoit-check.timer >/dev/null 2>&1 || true
     systemctl start updoit-check.timer >/dev/null 2>&1 || true
 fi
-# Produce a first count right away from the current lists (no network needed).
+# Make sure the launcher icon exists even if counting fails, then produce a first count
+# (and badge) right away from the current lists (no network needed).
+live=/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png
+if [ ! -e "$live" ] && [ -d "$(dirname "$live")" ]; then
+    cp -f /usr/share/updoit/icons/updoit-badge-0.png "$live" 2>/dev/null || true
+fi
 /usr/libexec/updoit/updoit-check --no-update >/dev/null 2>&1 || true
 exit 0

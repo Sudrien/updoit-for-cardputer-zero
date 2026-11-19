@@ -20,6 +20,7 @@
 - **Install progress** from apt's own status output.
 - **Daily background check** like DietPi's `CONFIG_CHECK_APT_UPDATES`: a systemd timer counts
   pending upgrades, and the menu shows the result instantly.
+- **Red badge on the launcher icon** with the number of pending updates (1-9, then 9+).
 - **sudo password** asked on launch (skipped when running as root or with passwordless sudo),
   kept in memory only and never written anywhere.
 
@@ -63,6 +64,14 @@ thread that the UI polls every 100 ms.
 | `/lib/systemd/system/updoit-check.{service,timer}` | 10 min after boot, then daily |
 | `/etc/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
 | `/run/updoit/apt_updates` | cached count, written by the check |
+| `/usr/share/updoit/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
+| `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; not owned by the package, swapped by the check |
+
+The badge works with the stock launcher: it reloads all icons when anything is created or
+deleted in its `applications/` folder, so the check swaps the live icon and then creates and
+deletes `applications/.updoit-icon-changed`. Updoit's `.desktop` file is never rewritten,
+because the launcher orders apps by that file's modification time. Icons are rendered from
+`assets/images/updoit-icon-skull.svg` with `scripts/render-icons.sh`.
 
 Depends on `apt`, `aria2` and `sudo`.
 

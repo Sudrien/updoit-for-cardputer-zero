@@ -44,6 +44,12 @@ install(TARGETS updoit-cli
 install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit-check"
     DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
 )
+# Launcher icon variants with an update-count badge; updoit-check copies the right one
+# to share/images/updoit-for-cardputer-zero-live.png (not owned by the package).
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/updoit/icons"
+    FILES_MATCHING PATTERN "updoit-badge-*.png"
+)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit.conf"
     DESTINATION "/etc"
 )

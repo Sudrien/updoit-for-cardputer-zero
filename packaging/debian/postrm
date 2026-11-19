@@ -2,6 +2,7 @@
 set -e
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     rm -rf /run/updoit /var/cache/updoit
+    rm -f /usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload >/dev/null 2>&1 || true
     fi

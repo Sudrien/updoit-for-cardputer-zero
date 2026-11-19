@@ -9,12 +9,41 @@
 #                             after an upgrade)
 #
 # Output: /run/updoit/apt_updates (key=value, see src/updater/status_cache.h)
+#         and the launcher icon with a red count badge (see update_icon below).
 
 set -u
 
 CONF=/etc/updoit.conf
 OUT_DIR=/run/updoit
 OUT="$OUT_DIR/apt_updates"
+
+# Launcher integration (overridable for testing).
+APPLAUNCH_DIR=${UPDOIT_APPLAUNCH_DIR:-/usr/share/APPLaunch}
+BADGE_DIR=${UPDOIT_BADGE_DIR:-/usr/share/updoit/icons}
+LIVE_ICON="$APPLAUNCH_DIR/share/images/updoit-for-cardputer-zero-live.png"
+
+# The .desktop entry points at LIVE_ICON, which the package does not own. Copy the
+# matching pre-rendered badge over it, then nudge the launcher: it watches its
+# applications/ directory and reloads every icon on a create/delete there. The
+# .desktop file itself is left alone, because the launcher orders apps by its mtime.
+update_icon() { # $1 = upgradable count
+    case "$1" in
+        0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9) variant=$1 ;;
+        *) variant=9plus ;;
+    esac
+    src="$BADGE_DIR/updoit-badge-$variant.png"
+    [ -r "$src" ] || return 0
+    [ -d "$(dirname "$LIVE_ICON")" ] || return 0
+    if cmp -s "$src" "$LIVE_ICON" 2>/dev/null; then
+        return 0
+    fi
+    cp -f "$src" "$LIVE_ICON.tmp.$$" && chmod 644 "$LIVE_ICON.tmp.$$" &&
+        mv -f "$LIVE_ICON.tmp.$$" "$LIVE_ICON"
+    if [ -d "$APPLAUNCH_DIR/applications" ]; then
+        poke="$APPLAUNCH_DIR/applications/.updoit-icon-changed"
+        : >"$poke" 2>/dev/null && rm -f "$poke"
+    fi
+}
 
 no_update=0
 [ "${1:-}" = "--no-update" ] && no_update=1
@@ -56,6 +85,8 @@ tmp="$OUT.tmp.$$"
 } >"$tmp"
 chmod 644 "$tmp"
 mv -f "$tmp" "$OUT"
+
+update_icon "$count"
 
 if [ "$level" -ge 2 ] && [ "$no_update" -eq 0 ]; then
     : # automatic upgrade is planned, not part of v0.1.0
