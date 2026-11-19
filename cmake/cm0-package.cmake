@@ -34,6 +34,10 @@ install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
+install(TARGETS updoit-cli
+    RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
+)
+
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/config/template-app.conf"
     DESTINATION "/etc"
 )

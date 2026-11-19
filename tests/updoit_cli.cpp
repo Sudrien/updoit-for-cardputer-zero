@@ -1,0 +1,103 @@
+/*
+ * SPDX-License-Identifier: MIT
+ */
+
+// Headless driver for UpgradeJob, for testing on a host or over SSH on the device:
+//   updoit-cli [upgrade|full-upgrade|autoremove|refresh] [--yes] [--plan-only]
+
+#include "upgrade_job.h"
+
+#include <chrono>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <string>
+#include <thread>
+
+using namespace updater;
+
+int main(int argc, char** argv) {
+    Operation op = Operation::Upgrade;
+    bool yes = false;
+    bool plan_only = false;
+    for (int i = 1; i < argc; ++i) {
+        const std::string a = argv[i];
+        if (a == "upgrade") op = Operation::Upgrade;
+        else if (a == "full-upgrade") op = Operation::FullUpgrade;
+        else if (a == "autoremove") op = Operation::Autoremove;
+        else if (a == "refresh") op = Operation::Refresh;
+        else if (a == "--yes") yes = true;
+        else if (a == "--plan-only") plan_only = true;
+        else {
+            std::fprintf(stderr, "usage: %s [upgrade|full-upgrade|autoremove|refresh] [--yes] [--plan-only]\n", argv[0]);
+            return 2;
+        }
+    }
+
+    Privilege privilege;
+    privilege.detect();
+    if (!plan_only && privilege.needs_password()) {
+        std::string password;
+        std::fprintf(stderr, "sudo password: ");
+        std::getline(std::cin, password);
+        if (!privilege.authenticate(password)) {
+            std::fprintf(stderr, "authentication failed\n");
+            return 1;
+        }
+    }
+
+    UpgradeJob job(privilege, JobConfig{});
+    job.start(op);
+
+    size_t printed_log = 0;
+    uint32_t last_rev = 0;
+    Phase last_phase = Phase::Idle;
+    while (true) {
+        const auto s = job.snapshot();
+        if (s.revision != last_rev) {
+            last_rev = s.revision;
+            // print new log lines (approximate: tail may have rolled)
+            if (s.log_tail.size() < printed_log) printed_log = 0;
+            for (size_t i = printed_log; i < s.log_tail.size(); ++i) {
+                std::printf("  | %s\n", s.log_tail[i].c_str());
+            }
+            printed_log = s.log_tail.size();
+            if (s.phase != last_phase) {
+                std::printf("[%s]\n", phase_label(s.phase));
+                last_phase = s.phase;
+            }
+            if (s.phase == Phase::Downloading) {
+                std::printf("  dl %d/%d files %s/%s active=%zu\n", s.download.files_complete,
+                            s.download.files_total, format_bytes(s.download.done_bytes).c_str(),
+                            format_bytes(s.download.total_bytes).c_str(), s.download.active.size());
+            }
+            if (s.phase == Phase::Installing && !s.install_status.empty()) {
+                std::printf("  %5.1f%% %s\n", s.install_percent, s.install_status.c_str());
+            }
+        }
+
+        if (s.phase == Phase::AwaitingConfirm) {
+            std::printf("%d upgrade, %d new, %d remove, %d kept back, %s to download\n",
+                        s.upgrades, s.new_installs, s.removals, s.kept_back,
+                        format_bytes(s.download_bytes).c_str());
+            for (const auto& line : job.plan_lines()) std::printf("  %s\n", line.c_str());
+            if (plan_only) return 0;
+            if (!yes) {
+                std::printf("Proceed? [y/N] ");
+                std::string answer;
+                std::getline(std::cin, answer);
+                if (answer != "y" && answer != "Y") {
+                    job.cancel();
+                    return 0;
+                }
+            }
+            job.confirm();
+        }
+        if (s.phase == Phase::Done) return 0;
+        if (s.phase == Phase::Failed || s.phase == Phase::Cancelled) {
+            std::fprintf(stderr, "%s: %s\n", phase_label(s.phase), s.error.c_str());
+            return 1;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
