@@ -27,6 +27,12 @@ void set_key_release_listener(KeyReleaseListener listener, void* user_data);
 void clear_key_release_listener(KeyReleaseListener listener, void* user_data);
 void set_global_key_listener(GlobalKeyListener listener, void* user_data);
 void clear_global_key_listener(GlobalKeyListener listener, void* user_data);
+
+// Per-screen key handler. Runs on key press after the global listener, before nav buttons.
+// Return true to consume the key. Keys are LVGL keys (LV_KEY_*) or printable ASCII.
+using ScreenKeyListener = bool (*)(uint32_t key, void* user_data);
+void set_screen_key_listener(ScreenKeyListener listener, void* user_data);
+void clear_screen_key_listener(ScreenKeyListener listener, void* user_data);
 const char* describe_key(uint32_t key);
 
 } // namespace platform

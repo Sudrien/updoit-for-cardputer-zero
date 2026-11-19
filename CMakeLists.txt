@@ -530,6 +530,7 @@ target_include_directories(${PROJECT_NAME}_view
         ${CMAKE_CURRENT_SOURCE_DIR}/src/viewmodel
         ${CMAKE_CURRENT_SOURCE_DIR}/src/model
         ${CMAKE_CURRENT_SOURCE_DIR}/src/platform
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/updater
 )
 
 target_link_libraries(${PROJECT_NAME}_view
@@ -565,6 +566,7 @@ target_link_libraries(${PROJECT_NAME}_viewmodel
         ${PROJECT_NAME}_reactive
         ${PROJECT_NAME}_model
         ${PROJECT_NAME}_platform
+        ${PROJECT_NAME}_updater
 )
 
 

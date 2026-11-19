@@ -11,6 +11,7 @@
 #include "titlebar.h"
 #include "lvgl.h"
 
+#include <cstdint>
 #include <memory>
 
 namespace app {
@@ -32,11 +33,18 @@ public:
 
 protected:
     virtual void build_content(lv_obj_t* content) = 0;
+    // Key presses while this screen is active. Return true when handled.
+    virtual bool handle_key(uint32_t key) {
+        (void)key;
+        return false;
+    }
 
     viewmodel::BaseViewModel& view_model();
     app::AssetManager& assets();
 
 private:
+    static bool key_listener(uint32_t key, void* user_data);
+
     viewmodel::BaseViewModel& view_model_;
     app::AssetManager& assets_;
     lv_obj_t* root_{nullptr};

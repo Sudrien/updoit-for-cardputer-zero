@@ -8,6 +8,7 @@
 
 #include "asset_manager.h"
 #include "bindings.h"
+#include "linux_input.h"
 #include "theme.h"
 
 namespace screen {
@@ -16,6 +17,7 @@ BaseScreen::BaseScreen(viewmodel::BaseViewModel& view_model, app::AssetManager& 
     : view_model_(view_model), assets_(assets) {}
 
 BaseScreen::~BaseScreen() {
+    platform::clear_screen_key_listener(key_listener, this);
     title_bar_.reset();
     nav_bar_.reset();
 
@@ -50,6 +52,12 @@ void BaseScreen::init() {
     reactive::bind_theme(content_, view_model_.dark_mode_subject(), reactive::ThemeRole::Surface);
 
     build_content(content_);
+    platform::set_screen_key_listener(key_listener, this);
+}
+
+bool BaseScreen::key_listener(uint32_t key, void* user_data) {
+    auto* screen = static_cast<BaseScreen*>(user_data);
+    return screen && screen->handle_key(key);
 }
 
 lv_obj_t* BaseScreen::root() const {

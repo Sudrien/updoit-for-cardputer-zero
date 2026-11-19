@@ -169,48 +169,21 @@ private:
             return true;
         }
 
-        const bool is_escape = key == LV_KEY_ESC;
-        const bool is_home_exit_key =
-            key == '4' &&
-            ((!long_pressed && view_model_.current_page() == model::AppPage::Apple) ||
-             (long_pressed && exit_key_pressed_ == key));
-        if (!is_escape && !is_home_exit_key) {
-            return false;
-        }
-
-        if (long_pressed) {
-            if (exit_key_pressed_ == key && exit_armed_) {
-                toast_->hide();
+        // Short ESC goes to the screen (back / cancel). Holding ESC quits from anywhere,
+        // except while apt is installing.
+        if (key == LV_KEY_ESC && long_pressed) {
+            if (view_model_.can_quit()) {
                 view_model_.request_quit();
             }
-        }
-        else {
-            exit_key_pressed_ = key;
-            exit_armed_ = view_model_.current_page() == model::AppPage::Apple;
-            if (exit_armed_) {
-                toast_->show_persistent_highlighted("Hold ",
-                                                    "ESC",
-                                                    " to exit",
-                                                    view::widgets::ToastTone::Warning);
+            else {
+                toast_->show("Installing - please wait", view::widgets::ToastTone::Warning, 2000);
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
-    void handle_release(uint32_t key) {
-        if (key != exit_key_pressed_) {
-            return;
-        }
-
-        if (exit_armed_) {
-            toast_->hide();
-        } else if (key == LV_KEY_ESC &&
-                   view_model_.current_page() == model::AppPage::Butter) {
-            view_model_.show_apple_page();
-        }
-        exit_key_pressed_ = 0;
-        exit_armed_ = false;
-    }
+    void handle_release(uint32_t) {}
 
     static bool global_key_listener(uint32_t key,
                                     const char*,
@@ -230,8 +203,6 @@ private:
     viewmodel::BaseViewModel& view_model_;
     std::unique_ptr<view::widgets::Toast> toast_;
     std::unique_ptr<view::widgets::HelpPopup> help_popup_;
-    uint32_t exit_key_pressed_{0};
-    bool exit_armed_{false};
 };
 
 #if !USE_DESKTOP
@@ -270,7 +241,7 @@ lv_display_t* init_device_display() {
 
 int Application::run() {
     logger::Logger::init();
-    logger::Logger::set_tag("template");
+    logger::Logger::set_tag("updoit");
 
     lv_init();
 
@@ -320,8 +291,16 @@ int Application::run() {
     simulator_frame.bind_dark_mode(view_model.dark_mode_subject());
 #endif
 
+    view_model.start(); // picks the first page (password or menu)
     ScreenManager screen_manager(view_model, assets);
     screen_manager.start();
+
+    // Poll the apt worker thread from the UI thread.
+    auto* job_timer = lv_timer_create(
+        [](lv_timer_t* timer) {
+            static_cast<viewmodel::BaseViewModel*>(lv_timer_get_user_data(timer))->tick();
+        },
+        100, &view_model);
     ShortcutController shortcuts(view_model, assets);
 
     DarkModePersistence dark_mode_persistence{user_config_path, view_model.is_dark_mode()};
@@ -345,6 +324,9 @@ int Application::run() {
         lv_delay_ms(5);
     }
 
+    if (job_timer) {
+        lv_timer_delete(job_timer);
+    }
     if (quit_observer) {
         lv_observer_remove(quit_observer);
     }

@@ -35,12 +35,15 @@ KeyReleaseListener key_release_listener = nullptr;
 void* key_release_listener_user_data = nullptr;
 GlobalKeyListener global_key_listener = nullptr;
 void* global_key_listener_user_data = nullptr;
+ScreenKeyListener screen_key_listener = nullptr;
+void* screen_key_listener_user_data = nullptr;
 
 constexpr uint32_t kLongPressMs = 700;
 
 #if !USE_DESKTOP
 struct EvdevKeypad {
     int fd{-1};
+    bool shift{false};
     lv_indev_state_t state{LV_INDEV_STATE_RELEASED};
     uint32_t key{0};
     bool router_event_pending{false};
@@ -132,6 +135,9 @@ void route_key_state(uint32_t key, bool pressed) {
         long_press_sent = false;
         pressed_key_consumed = emit_global_key(key, false);
         ensure_long_press_timer();
+        if (!pressed_key_consumed && screen_key_listener) {
+            pressed_key_consumed = screen_key_listener(key, screen_key_listener_user_data);
+        }
         if (!pressed_key_consumed) {
             dispatch_nav_key(key);
         }
@@ -183,7 +189,9 @@ void key_event_cb(lv_event_t* event) {
 }
 
 #if !USE_DESKTOP
-uint32_t map_evdev_key(uint16_t code) {
+// US layout. Letters, digits and punctuation become ASCII so screens can take text input
+// (the sudo password); navigation keys become LV_KEY_*.
+uint32_t map_evdev_key(uint16_t code, bool shift) {
     switch (code) {
         case KEY_ESC:
             return LV_KEY_ESC;
@@ -191,27 +199,59 @@ uint32_t map_evdev_key(uint16_t code) {
             return LV_KEY_LEFT;
         case KEY_RIGHT:
             return LV_KEY_RIGHT;
-        case KEY_Z:
-            return 'z';
-        case KEY_C:
-            return 'c';
-        case KEY_4:
-            return '4';
-        case KEY_5:
-            return '5';
-        case KEY_6:
-            return '6';
-        case KEY_7:
-            return '7';
-        case KEY_8:
-            return '8';
+        case KEY_UP:
+            return LV_KEY_UP;
+        case KEY_DOWN:
+            return LV_KEY_DOWN;
+        case KEY_ENTER:
+        case KEY_KPENTER:
+            return LV_KEY_ENTER;
+        case KEY_BACKSPACE:
+            return LV_KEY_BACKSPACE;
+        case KEY_DELETE:
+            return LV_KEY_DEL;
+        case KEY_HOME:
+            return LV_KEY_HOME;
+        case KEY_END:
+            return LV_KEY_END;
+        case KEY_PAGEUP:
+            return LV_KEY_PREV;
+        case KEY_PAGEDOWN:
+            return LV_KEY_NEXT;
         case KEY_SYSRQ:
             return kKeyPrintScreen;
         case KEY_HELP:
             return kKeyHelp;
         default:
-            return 0;
+            break;
     }
+
+    static constexpr struct {
+        uint16_t code;
+        char plain;
+        char shifted;
+    } kChars[] = {
+        {KEY_1, '1', '!'}, {KEY_2, '2', '@'}, {KEY_3, '3', '#'}, {KEY_4, '4', '$'},
+        {KEY_5, '5', '%'}, {KEY_6, '6', '^'}, {KEY_7, '7', '&'}, {KEY_8, '8', '*'},
+        {KEY_9, '9', '('}, {KEY_0, '0', ')'}, {KEY_MINUS, '-', '_'}, {KEY_EQUAL, '=', '+'},
+        {KEY_LEFTBRACE, '[', '{'}, {KEY_RIGHTBRACE, ']', '}'}, {KEY_BACKSLASH, '\\', '|'},
+        {KEY_SEMICOLON, ';', ':'}, {KEY_APOSTROPHE, '\'', '"'}, {KEY_GRAVE, '`', '~'},
+        {KEY_COMMA, ',', '<'}, {KEY_DOT, '.', '>'}, {KEY_SLASH, '/', '?'}, {KEY_SPACE, ' ', ' '},
+        {KEY_Q, 'q', 'Q'}, {KEY_W, 'w', 'W'}, {KEY_E, 'e', 'E'}, {KEY_R, 'r', 'R'},
+        {KEY_T, 't', 'T'}, {KEY_Y, 'y', 'Y'}, {KEY_U, 'u', 'U'}, {KEY_I, 'i', 'I'},
+        {KEY_O, 'o', 'O'}, {KEY_P, 'p', 'P'}, {KEY_A, 'a', 'A'}, {KEY_S, 's', 'S'},
+        {KEY_D, 'd', 'D'}, {KEY_F, 'f', 'F'}, {KEY_G, 'g', 'G'}, {KEY_H, 'h', 'H'},
+        {KEY_J, 'j', 'J'}, {KEY_K, 'k', 'K'}, {KEY_L, 'l', 'L'}, {KEY_Z, 'z', 'Z'},
+        {KEY_X, 'x', 'X'}, {KEY_C, 'c', 'C'}, {KEY_V, 'v', 'V'}, {KEY_B, 'b', 'B'},
+        {KEY_N, 'n', 'N'}, {KEY_M, 'm', 'M'},
+    };
+    for (const auto& entry : kChars) {
+        if (entry.code == code) {
+            return static_cast<uint32_t>(static_cast<unsigned char>(shift ? entry.shifted
+                                                                         : entry.plain));
+        }
+    }
+    return 0;
 }
 
 bool has_nav_keys(int fd) {
@@ -227,7 +267,8 @@ bool has_nav_keys(int fd) {
 
     return has_key(KEY_ESC) || has_key(KEY_LEFT) || has_key(KEY_RIGHT) || has_key(KEY_Z) ||
            has_key(KEY_C) || has_key(KEY_4) || has_key(KEY_5) || has_key(KEY_6) ||
-           has_key(KEY_7) || has_key(KEY_8) || has_key(KEY_SYSRQ) || has_key(KEY_HELP);
+           has_key(KEY_7) || has_key(KEY_8) || has_key(KEY_SYSRQ) || has_key(KEY_HELP) ||
+           has_key(KEY_ENTER) || has_key(KEY_A);
 }
 
 void evdev_read_cb(lv_indev_t* indev, lv_indev_data_t* data) {
@@ -244,7 +285,12 @@ void evdev_read_cb(lv_indev_t* indev, lv_indev_data_t* data) {
             continue;
         }
 
-        const auto key = map_evdev_key(input.code);
+        if (input.code == KEY_LEFTSHIFT || input.code == KEY_RIGHTSHIFT) {
+            keypad->shift = input.value != 0;
+            continue;
+        }
+
+        const auto key = map_evdev_key(input.code, keypad->shift);
         if (!key || input.value == 2) {
             continue;
         }
@@ -408,6 +454,18 @@ void clear_global_key_listener(GlobalKeyListener listener, void* user_data) {
     if (global_key_listener == listener && global_key_listener_user_data == user_data) {
         global_key_listener = nullptr;
         global_key_listener_user_data = nullptr;
+    }
+}
+
+void set_screen_key_listener(ScreenKeyListener listener, void* user_data) {
+    screen_key_listener = listener;
+    screen_key_listener_user_data = user_data;
+}
+
+void clear_screen_key_listener(ScreenKeyListener listener, void* user_data) {
+    if (screen_key_listener == listener && screen_key_listener_user_data == user_data) {
+        screen_key_listener = nullptr;
+        screen_key_listener_user_data = nullptr;
     }
 }
 

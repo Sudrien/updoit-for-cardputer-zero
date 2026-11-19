@@ -9,11 +9,7 @@
 namespace model {
 
 const char* BaseModel::app_title() const {
-    return "Template App";
-}
-
-const char* BaseModel::greeting() const {
-    return "Hello World";
+    return "Updoit";
 }
 
 bool BaseModel::dark_mode() const {
@@ -32,13 +28,21 @@ AppPage BaseModel::current_page() const {
     return current_page_;
 }
 
-
 void BaseModel::set_current_page(AppPage page) {
     current_page_ = page;
 }
 
-void BaseModel::toggle_page() {
-    current_page_ = current_page_ == AppPage::Apple ? AppPage::Butter : AppPage::Apple;
+int BaseModel::menu_index() const {
+    return menu_index_;
+}
+
+void BaseModel::move_menu(int delta) {
+    set_menu_index(menu_index_ + delta);
+}
+
+void BaseModel::set_menu_index(int index) {
+    // wrap around
+    menu_index_ = ((index % kMenuItemCount) + kMenuItemCount) % kMenuItemCount;
 }
 
 } // namespace model

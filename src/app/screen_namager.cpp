@@ -6,8 +6,7 @@
 
 #include "screen_manager.h"
 
-#include "apple_screen.h"
-#include "butter_screen.h"
+#include "updoit_screens.h"
 
 namespace app {
 namespace {
@@ -53,15 +52,27 @@ void ScreenManager::start() {
                                                          nullptr);
 }
 
-void ScreenManager::show_apple_screen() {
-    load_screen(std::make_unique<screen::AppleScreen>(view_model_, assets_));
-    loaded_page_ = model::AppPage::Apple;
-    has_loaded_page_ = true;
-}
-
-void ScreenManager::show_butter_screen() {
-    load_screen(std::make_unique<screen::ButterScreen>(view_model_, assets_));
-    loaded_page_ = model::AppPage::Butter;
+void ScreenManager::show_page(model::AppPage page) {
+    std::unique_ptr<screen::BaseScreen> next;
+    switch (page) {
+        case model::AppPage::Password:
+            next = std::make_unique<screen::PasswordScreen>(view_model_, assets_);
+            break;
+        case model::AppPage::Menu:
+            next = std::make_unique<screen::MenuScreen>(view_model_, assets_);
+            break;
+        case model::AppPage::Confirm:
+            next = std::make_unique<screen::ConfirmScreen>(view_model_, assets_);
+            break;
+        case model::AppPage::Progress:
+            next = std::make_unique<screen::ProgressScreen>(view_model_, assets_);
+            break;
+        case model::AppPage::Result:
+            next = std::make_unique<screen::ResultScreen>(view_model_, assets_);
+            break;
+    }
+    load_screen(std::move(next));
+    loaded_page_ = page;
     has_loaded_page_ = true;
 }
 
@@ -82,12 +93,7 @@ void ScreenManager::flush_requested_page() {
         return;
     }
 
-    if (requested_page_ == model::AppPage::Butter) {
-        show_butter_screen();
-        return;
-    }
-
-    show_apple_screen();
+    show_page(requested_page_);
 }
 
 lv_obj_t* ScreenManager::current_screen() const {

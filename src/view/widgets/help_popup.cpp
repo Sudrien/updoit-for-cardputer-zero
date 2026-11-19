@@ -21,19 +21,30 @@ struct HelpRow {
     const char* action;
 };
 
-constexpr std::array<HelpRow, 5> kAppleRows = {{
-    {"HOLD ESC / 4", "Exit"},
-    {"5", "Text weight"},
-    {"6", "Light / dark"},
-    {"7", "Version info"},
-    {"8", "Open counter"},
-}};
+struct PageHelp {
+    const char* badge;
+    std::array<HelpRow, 5> rows;
+    std::size_t count;
+};
 
-constexpr std::array<HelpRow, 3> kButterRows = {{
-    {"ESC", "Back to home"},
-    {"Z / LEFT", "Decrease"},
-    {"C / RIGHT", "Increase"},
-}};
+PageHelp help_for(model::AppPage page) {
+    switch (page) {
+        case model::AppPage::Password:
+            return {"PASSWORD", {{{"type", "sudo password"}, {"ENTER", "Unlock"},
+                                  {"BKSP", "Delete"}, {"ESC", "Quit"}}}, 4};
+        case model::AppPage::Menu:
+            return {"MENU", {{{"UP / DOWN", "Choose"}, {"1 - 4", "Run directly"},
+                              {"ENTER", "Run"}, {"ESC", "Quit"}}}, 4};
+        case model::AppPage::Confirm:
+            return {"CONFIRM", {{{"UP / DOWN", "Scroll list"}, {"ENTER", "Download + install"},
+                                 {"ESC", "Back"}}}, 3};
+        case model::AppPage::Progress:
+            return {"PROGRESS", {{{"ESC", "Cancel (not while"}, {"", "installing)"}}}, 2};
+        case model::AppPage::Result:
+            return {"RESULT", {{{"UP / DOWN", "Scroll"}, {"ENTER / ESC", "Back to menu"}}}, 2};
+    }
+    return {"", {}, 0};
+}
 
 } // namespace
 
@@ -156,18 +167,16 @@ bool HelpPopup::visible() const {
 }
 
 void HelpPopup::update_rows(model::AppPage page) {
-    const bool butter = page == model::AppPage::Butter;
-    lv_label_set_text(page_badge_, butter ? "COUNTER" : "HOME");
+    const auto help = help_for(page);
+    lv_label_set_text(page_badge_, help.badge);
     for (std::size_t i = 0; i < rows_.size(); ++i) {
-        const bool row_visible = butter ? i < kButterRows.size() : i < kAppleRows.size();
-        if (!row_visible) {
+        if (i >= help.count) {
             lv_obj_add_flag(rows_[i].row, LV_OBJ_FLAG_HIDDEN);
             continue;
         }
         lv_obj_remove_flag(rows_[i].row, LV_OBJ_FLAG_HIDDEN);
-        const auto& row = butter ? kButterRows[i] : kAppleRows[i];
-        lv_label_set_text(rows_[i].key, row.key);
-        lv_label_set_text(rows_[i].action, row.action);
+        lv_label_set_text(rows_[i].key, help.rows[i].key);
+        lv_label_set_text(rows_[i].action, help.rows[i].action);
     }
 }
 
