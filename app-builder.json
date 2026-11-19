@@ -14,7 +14,7 @@
       "screenshot/updoit-download.png",
       "screenshot/updoit-done.png"
     ],
-    "icon": "assets/images/updoit-for-cardputer-zero.png",
+    "icon": "assets/images/updoit-store-icon.png",
     "license": "TODO: an SPDX id, e.g. MIT",
     "source_repo": "https://github.com/Sudrien/updoit-for-cardputer-zero",
     "author": { "github": "Sudrien", "display_name": "TODO: Your Name" },
