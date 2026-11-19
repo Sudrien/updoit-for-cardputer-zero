@@ -1,8 +1,8 @@
 {
-  "app_name": "Template",
+  "app_name": "Updoit",
   "package_name": "updoit-for-cardputer-zero",
   "version": "0.1.0",
-  "description": "Template Application for CardputerZero",
+  "description": "apt updates for CardputerZero with parallel downloads",
 
   "store": {
     "summary": "TODO: one line about your app (placeholders are auto-rejected)",
@@ -14,16 +14,16 @@
     ],
     "icon": "assets/images/updoit-for-cardputer-zero.png",
     "license": "TODO: an SPDX id, e.g. MIT",
-    "source_repo": "https://github.com/CardputerZero/Template",
-    "author": { "github": "TODO-your-github-login", "display_name": "TODO: Your Name" },
+    "source_repo": "https://github.com/Sudrien/updoit-for-cardputer-zero",
+    "author": { "github": "Sudrien", "display_name": "TODO: Your Name" },
     "share_code": "TODO",
     "permissions": {
       "camera": false,
       "microphone": false,
       "imu": false,
-      "network": false,
+      "network": true,
       "additional_hardware": false,
-      "background_service": false,
+      "background_service": true,
       "external_display": false
     }
   }

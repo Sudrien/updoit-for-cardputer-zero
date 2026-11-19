@@ -12,8 +12,10 @@ set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
 # still a template/M5Stack identity, so set your own name and email here.
 set(APP_MAINTAINER "TODO Your Name <todo@example.invalid>" CACHE STRING "Debian package maintainer")
-set(APP_PACKAGE_DESCRIPTION "CardputerZero LVGL template application" CACHE STRING "Debian package summary")
-set(APP_INSTALL_SYSTEMD_SERVICE ON CACHE BOOL "Install a systemd service file for embedded deployments")
+set(APP_PACKAGE_DESCRIPTION "apt updates for CardputerZero with parallel downloads" CACHE STRING "Debian package summary")
+# Off: the launcher starts Updoit from its .desktop entry. A boot-time service for the GUI
+# would take over the screen. (The background check uses its own timer, installed below.)
+set(APP_INSTALL_SYSTEMD_SERVICE OFF CACHE BOOL "Install a systemd service file for embedded deployments")
 
 set(APP_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/package")
 configure_file(
@@ -36,6 +38,20 @@ install(TARGETS ${PROJECT_NAME}
 
 install(TARGETS updoit-cli
     RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
+)
+
+# Background apt check (DietPi-style daily timer)
+install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit-check"
+    DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit.conf"
+    DESTINATION "/etc"
+)
+install(FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-check.service"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-check.timer"
+    # literal "lib": CMAKE_INSTALL_LIBDIR can be a multiarch dir, which systemd ignores
+    DESTINATION "lib/systemd/system"
 )
 
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/config/template-app.conf"
@@ -98,7 +114,7 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${APP_MAINTAINER}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-set(APP_DEBIAN_DEPENDS "libc6, libstdc++6, libgcc-s1, libfreetype6, libpng16-16, libjpeg62-turbo, zlib1g")
+set(APP_DEBIAN_DEPENDS "libc6, libstdc++6, libgcc-s1, libfreetype6, libpng16-16, libjpeg62-turbo, zlib1g, apt, aria2, sudo")
 if(FMT_INCLUDE_DIR AND FMT_LIBRARY)
     string(APPEND APP_DEBIAN_DEPENDS ", libfmt10")
 endif()
@@ -111,6 +127,11 @@ configure_file(
     "${APP_GENERATED_DIR}/conffiles"
     @ONLY
 )
-set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA "${APP_GENERATED_DIR}/conffiles")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${APP_GENERATED_DIR}/conffiles"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postinst"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/prerm"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postrm"
+)
 
 include(CPack)

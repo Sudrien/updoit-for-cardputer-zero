@@ -1,0 +1,64 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+#
+# updoit-check: refresh apt lists and cache the number of upgradable packages,
+# like DietPi's CONFIG_CHECK_APT_UPDATES daily check.
+#
+#   updoit-check              run from updoit-check.timer; honours /etc/updoit.conf
+#   updoit-check --no-update  only recount from the current lists (used by the app
+#                             after an upgrade)
+#
+# Output: /run/updoit/apt_updates (key=value, see src/updater/status_cache.h)
+
+set -u
+
+CONF=/etc/updoit.conf
+OUT_DIR=/run/updoit
+OUT="$OUT_DIR/apt_updates"
+
+no_update=0
+[ "${1:-}" = "--no-update" ] && no_update=1
+
+# 0 = off, 1 = check only (default), 2 = check and upgrade automatically (planned)
+level=1
+if [ -r "$CONF" ]; then
+    value=$(sed -n 's/^[[:space:]]*UPDOIT_CHECK_APT_UPDATES=\([0-9]\).*/\1/p' "$CONF" | tail -n 1)
+    [ -n "$value" ] && level=$value
+fi
+
+if [ "$no_update" -eq 0 ] && [ "$level" -eq 0 ]; then
+    exit 0
+fi
+
+export LC_ALL=C LANG=C DEBIAN_FRONTEND=noninteractive
+
+error=""
+if [ "$no_update" -eq 0 ]; then
+    if ! apt-get -qq -o DPkg::Lock::Timeout=300 update >/dev/null 2>"$OUT_DIR.err.$$"; then
+        error=$(grep '^E:' "$OUT_DIR.err.$$" | head -n 1 | tr -d '\n')
+        [ -n "$error" ] || error="apt-get update failed"
+    fi
+    rm -f "$OUT_DIR.err.$$"
+fi
+
+packages=$(apt-get -s -o Debug::NoLocking=1 upgrade 2>/dev/null | awk '/^Inst /{print $2}' | tr '\n' ' ')
+count=0
+for p in $packages; do count=$((count + 1)); done
+
+mkdir -p "$OUT_DIR"
+chmod 755 "$OUT_DIR"
+tmp="$OUT.tmp.$$"
+{
+    echo "checked=$(date +%s)"
+    echo "upgradable=$count"
+    echo "packages=${packages% }"
+    [ -n "$error" ] && echo "error=$error"
+} >"$tmp"
+chmod 644 "$tmp"
+mv -f "$tmp" "$OUT"
+
+if [ "$level" -ge 2 ] && [ "$no_update" -eq 0 ]; then
+    : # automatic upgrade is planned, not part of v0.1.0
+fi
+
+exit 0

@@ -1,0 +1,11 @@
+[Unit]
+Description=Updoit: daily check for apt package updates
+
+[Timer]
+# /run is cleared at boot, so check shortly after boot, then once a day.
+OnBootSec=10min
+OnUnitActiveSec=1d
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

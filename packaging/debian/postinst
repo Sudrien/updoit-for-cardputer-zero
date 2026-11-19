@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+if [ "$1" = "configure" ] && [ -d /run/systemd/system ]; then
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    systemctl enable updoit-check.timer >/dev/null 2>&1 || true
+    systemctl start updoit-check.timer >/dev/null 2>&1 || true
+fi
+# Produce a first count right away from the current lists (no network needed).
+/usr/libexec/updoit/updoit-check --no-update >/dev/null 2>&1 || true
+exit 0
