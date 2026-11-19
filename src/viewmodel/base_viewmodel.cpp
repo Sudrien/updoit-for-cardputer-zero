@@ -285,7 +285,11 @@ const char* BaseViewModel::menu_label(int index) {
     if (index < 0 || index >= model::kMenuItemCount) {
         return "";
     }
-    return updater::operation_label(kMenuOps[index]);
+    // Show the real command, so the menu teaches what it runs (apt-get under the hood).
+    static const char* const kLabels[model::kMenuItemCount] = {
+        "apt upgrade", "apt dist-upgrade", "apt autoremove", "apt update", "apt clean",
+    };
+    return kLabels[index];
 }
 
 lv_subject_t* BaseViewModel::menu_hint_subject(int index) {

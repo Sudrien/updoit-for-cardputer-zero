@@ -10,8 +10,9 @@
 
 ## What it does
 
-- **Upgrade, Full upgrade, Autoremove, Refresh lists, Clean caches** (`apt-get upgrade`,
-  `dist-upgrade`, `autoremove`, `update`, `clean`) from a keyboard-driven 320x170 UI.
+- **apt upgrade, apt dist-upgrade, apt autoremove, apt update, apt clean** (run as the
+  matching `apt-get` commands), each labelled with its command and with what it would do:
+  package counts, time of the last update, and the size of the package cache from a keyboard-driven 320x170 UI.
 - **Confirm first**: shows what will be upgraded, installed, removed or kept back, and the
   download size, before anything changes.
 - **Parallel downloads** with `aria2c` (4 files at once, 2 connections each), with overall
