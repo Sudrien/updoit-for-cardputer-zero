@@ -14,6 +14,7 @@ void row_selected_observer(lv_observer_t* observer, lv_subject_t* subject) {
     const auto index = static_cast<int>(reinterpret_cast<intptr_t>(lv_observer_get_user_data(observer)));
     if (lv_subject_get_int(subject) == index) {
         lv_obj_add_state(row, LV_STATE_CHECKED);
+        lv_obj_scroll_to_view(row, LV_ANIM_OFF); // keep the selection visible in the list
     }
     else {
         lv_obj_remove_state(row, LV_STATE_CHECKED);
@@ -41,8 +42,18 @@ void MenuScreen::build_content(lv_obj_t* content) {
     reactive::bind_label_text(status, view_model().updates_text_subject());
     style::accent(status, dark, style::Accent::Part::Text, style::Accent::Tone::Muted);
 
+    // Rows live in a scrolling list: six rows do not fit the content area at once.
+    auto* list = style::box(column);
+    lv_obj_set_width(list, LV_PCT(100));
+    lv_obj_set_height(list, 5 * 17); // exactly five rows, so none is half cut off
+    lv_obj_add_flag(list, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(list, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(list, LV_DIR_VER);
+    lv_obj_remove_flag(list, LV_OBJ_FLAG_SCROLL_ELASTIC);
+    lv_obj_set_flex_flow(list, LV_FLEX_FLOW_COLUMN);
+
     for (int i = 0; i < model::kMenuItemCount; ++i) {
-        auto* row = style::box(column);
+        auto* row = style::box(list);
         lv_obj_set_size(row, LV_PCT(100), 17); // five rows fit the 110 px content area
         lv_obj_set_style_radius(row, 4, 0);
         lv_obj_set_style_pad_hor(row, 6, 0);

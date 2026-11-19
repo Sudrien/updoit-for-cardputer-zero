@@ -74,10 +74,11 @@ updater::JobConfig job_config() {
 }
 
 constexpr Operation kMenuOps[model::kMenuItemCount] = {
+    Operation::Refresh,
+    Operation::Download,
     Operation::Upgrade,
     Operation::FullUpgrade,
     Operation::Autoremove,
-    Operation::Refresh,
     Operation::Clean,
 };
 
@@ -96,7 +97,7 @@ BaseViewModel::BaseViewModel()
       updates_text_subject_(""),
       menu_hint_subject_{reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
                          reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
-                         reactive::StringSubject<24>("")},
+                         reactive::StringSubject<24>(""), reactive::StringSubject<24>("")},
       confirm_summary_subject_(""),
       progress_title_subject_(""),
       progress_detail_subject_(""),
@@ -287,7 +288,8 @@ const char* BaseViewModel::menu_label(int index) {
     }
     // Show the real command, so the menu teaches what it runs (apt-get under the hood).
     static const char* const kLabels[model::kMenuItemCount] = {
-        "apt upgrade", "apt dist-upgrade", "apt autoremove", "apt update", "apt clean",
+        "apt update",     "apt dist-upgrade -d", "apt upgrade",
+        "apt dist-upgrade", "apt autoremove",    "apt clean",
     };
     return kLabels[index];
 }
@@ -324,12 +326,13 @@ void BaseViewModel::refresh_updates_text() {
     const auto count_text = [&](int n) {
         return !cache.valid ? std::string("?") : n == 0 ? std::string("none") : std::to_string(n) + " pkg" + (n == 1 ? "" : "s");
     };
-    menu_hint_subject_[0].set(count_text(cache.upgradable).c_str());
-    menu_hint_subject_[1].set(count_text(cache.full_upgradable).c_str());
-    menu_hint_subject_[2].set(count_text(cache.autoremovable).c_str());
     const auto updated = age_text(cache.updated);
-    menu_hint_subject_[3].set(updated.empty() ? "never updated" : updated.c_str());
-    menu_hint_subject_[4].set(!cache.valid || !cache.has_cache_bytes
+    menu_hint_subject_[0].set(updated.empty() ? "never updated" : updated.c_str());
+    menu_hint_subject_[1].set(count_text(cache.full_upgradable).c_str());
+    menu_hint_subject_[2].set(count_text(cache.upgradable).c_str());
+    menu_hint_subject_[3].set(count_text(cache.full_upgradable).c_str());
+    menu_hint_subject_[4].set(count_text(cache.autoremovable).c_str());
+    menu_hint_subject_[5].set(!cache.valid || !cache.has_cache_bytes
                                   ? "?"
                                   : (cache.cache_bytes == 0 ? "empty"
                                                             : updater::format_bytes(cache.cache_bytes).c_str()));
@@ -404,7 +407,8 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
             break;
 
         case Phase::AwaitingConfirm: {
-            std::string summary = std::to_string(s.upgrades) + " upgrade";
+            std::string summary = s.operation == Operation::Download ? "Download only: " : "";
+            summary += std::to_string(s.upgrades) + " upgrade";
             if (s.new_installs) {
                 summary += ", " + std::to_string(s.new_installs) + " new";
             }
@@ -473,7 +477,14 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
                                           : s.operation == Operation::Clean ? "Caches cleaned"
                                                                             : "Done");
                 result_tone_subject_.set(0);
-                if (s.operation == Operation::Clean) {
+                if (s.operation == Operation::Download) {
+                    result_title_subject_.set("Downloaded");
+                    text = s.downloaded_count == 0
+                               ? "Nothing to download."
+                               : std::to_string(s.downloaded_count) +
+                                     " packages cached. Run apt upgrade to install them.";
+                }
+                else if (s.operation == Operation::Clean) {
                     text = s.freed_bytes ? "Freed " + updater::format_bytes(s.freed_bytes) + "."
                                          : "Nothing to clean.";
                 }

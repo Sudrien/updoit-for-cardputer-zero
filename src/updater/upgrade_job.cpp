@@ -411,6 +411,18 @@ void UpgradeJob::execute_worker(Operation op) {
         }
     }
 
+    if (op == Operation::Download) {
+        // Files are in apt's cache now; "apt upgrade"/"apt dist-upgrade" will use them
+        // later without touching the network. Nothing is installed.
+        std::lock_guard<std::mutex> lock(mutex_);
+        state_.downloaded_count = static_cast<int>(staged.size());
+        state_.install_percent = 100;
+        state_.phase = Phase::Done;
+        state_.can_cancel = false;
+        bump();
+        return;
+    }
+
     // 3. Install. apt re-verifies every hash before dpkg sees the files.
     //    Status goes to fd 3 (a dup of stdout): with APT::Status-Fd=1 apt closes stdout for
     //    dpkg, and maintainer scripts that echo then fail with "I/O error". sudo closes

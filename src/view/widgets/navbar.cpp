@@ -27,7 +27,7 @@ Hints hints_for(model::AppPage page, bool can_cancel) {
         case model::AppPage::Menu:
             return {{{"ESC", "Quit"}, {"UP/DN", "Choose"}, {"ENTER", "Run"}}};
         case model::AppPage::Confirm:
-            return {{{"ESC", "Back"}, {"UP/DN", "Scroll"}, {"ENTER", "Install"}}};
+            return {{{"ESC", "Back"}, {"UP/DN", "Scroll"}, {"ENTER", "Start"}}};
         case model::AppPage::Progress:
             if (can_cancel) {
                 return {{{"ESC", "Cancel"}, {nullptr, nullptr}, {nullptr, nullptr}}};

@@ -43,6 +43,7 @@ struct JobSnapshot {
     int kept_back = 0;
     uint64_t download_bytes = 0;  // total size of files to fetch
     uint64_t freed_bytes = 0;     // Clean caches: space released
+    int downloaded_count = 0;     // Download updates: packages fetched
 
     DownloadProgress download;
 

@@ -16,7 +16,7 @@ enum class AppPage {
     Result   = 4, // done / failed / cancelled
 };
 
-constexpr int kMenuItemCount = 5;
+constexpr int kMenuItemCount = 6;
 
 class BaseModel {
 public:

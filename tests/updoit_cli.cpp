@@ -3,7 +3,7 @@
  */
 
 // Headless driver for UpgradeJob, for testing on a host or over SSH on the device:
-//   updoit-cli [upgrade|full-upgrade|autoremove|refresh|clean] [--yes] [--plan-only]
+//   updoit-cli [upgrade|full-upgrade|autoremove|refresh|clean|download] [--yes] [--plan-only]
 
 #include "upgrade_job.h"
 
@@ -29,12 +29,13 @@ int main(int argc, char** argv) {
         else if (a == "autoremove") op = Operation::Autoremove;
         else if (a == "refresh") op = Operation::Refresh;
         else if (a == "clean") op = Operation::Clean;
+        else if (a == "download") op = Operation::Download;
         else if (a == "--yes") yes = true;
         else if (a == "--plan-only") plan_only = true;
         else if (a.rfind("--limit=", 0) == 0) limit = a.substr(8);
         else if (a.rfind("--cancel-after-ms=", 0) == 0) cancel_after_ms = std::stoi(a.substr(18));
         else {
-            std::fprintf(stderr, "usage: %s [upgrade|full-upgrade|autoremove|refresh|clean] [--yes] [--plan-only] [--limit=500K] [--cancel-after-ms=N]\n", argv[0]);
+            std::fprintf(stderr, "usage: %s [upgrade|full-upgrade|autoremove|refresh|clean|download] [--yes] [--plan-only] [--limit=500K] [--cancel-after-ms=N]\n", argv[0]);
             return 2;
         }
     }

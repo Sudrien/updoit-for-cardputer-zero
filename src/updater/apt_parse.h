@@ -16,6 +16,7 @@ enum class Operation {
     Autoremove,  // apt-get autoremove
     Refresh,     // apt-get update
     Clean,       // apt-get clean (frees the package cache)
+    Download,    // apt-get dist-upgrade --download-only (fetch now, install later)
 };
 
 const char* operation_label(Operation op);

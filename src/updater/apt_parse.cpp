@@ -69,6 +69,8 @@ const char* operation_label(Operation op) {
             return "Refresh lists";
         case Operation::Clean:
             return "Clean caches";
+        case Operation::Download:
+            return "Download updates";
     }
     return "";
 }
@@ -85,12 +87,14 @@ const char* operation_apt_verb(Operation op) {
             return "update";
         case Operation::Clean:
             return "clean";
+        case Operation::Download:
+            return "dist-upgrade"; // planned and fetched like dist-upgrade, never installed
     }
     return "";
 }
 
 bool operation_downloads(Operation op) {
-    return op == Operation::Upgrade || op == Operation::FullUpgrade;
+    return op == Operation::Upgrade || op == Operation::FullUpgrade || op == Operation::Download;
 }
 
 bool operation_is_direct(Operation op) {

@@ -1,4 +1,5 @@
 <p align="center">
+  <img src="./screenshot/updoit-launcher.png" alt="Updoit in the launcher, with 8 updates pending" width="320" />
   <img src="./screenshot/updoit-menu.png" alt="Updoit menu" width="320" />
   <img src="./screenshot/updoit-download.png" alt="Updoit downloading packages in parallel" width="320" />
 </p>
@@ -10,9 +11,11 @@
 
 ## What it does
 
-- **apt upgrade, apt dist-upgrade, apt autoremove, apt update, apt clean** (run as the
-  matching `apt-get` commands), each labelled with its command and with what it would do:
-  package counts, time of the last update, and the size of the package cache from a keyboard-driven 320x170 UI.
+- **apt update, apt dist-upgrade -d, apt upgrade, apt dist-upgrade, apt autoremove,
+  apt clean** from a keyboard-driven 320x170 UI, run as the matching `apt-get` commands.
+  `-d` downloads everything now and installs nothing, so a later upgrade needs no network.
+- **Each menu row shows what it would do**: package counts, the time of the last update and
+  the size of the package cache, cached in `/etc/updoit.status`.
 - **Confirm first**: shows what will be upgraded, installed, removed or kept back, and the
   download size, before anything changes.
 - **Parallel downloads** with `aria2c` (4 files at once, 2 connections each), with overall
@@ -33,7 +36,7 @@ guard, reboot prompt, network check, auto-upgrade, pipelined download+install).
 | Page | Keys |
 | --- | --- |
 | Password | type, `Enter` unlock, `Backspace` delete, `Esc` quit |
-| Menu | `Up`/`Down` choose, `1`-`5` run directly, `Enter` run, `Esc` quit |
+| Menu | `Up`/`Down` choose (the list scrolls), `1`-`6` run directly, `Enter` run, `Esc` quit |
 | Confirm | `Up`/`Down` scroll, `Enter` download + install, `Esc` back |
 | Progress | `Esc` cancel (checking and downloading only; never mid-install) |
 | Result | `Up`/`Down` scroll, `Enter`/`Esc` back to menu |
@@ -79,6 +82,7 @@ Depends on `apt`, `aria2` and `sudo`.
 ## Testing without the GUI
 
 ```shell
+updoit-cli download                   # fetch the full-upgrade set into apt's cache, install nothing
 updoit-cli clean                      # free the apt package cache (no confirm step)
 updoit-cli upgrade --plan-only        # show the plan, change nothing
 updoit-cli upgrade                    # prompts for the sudo password, then asks to proceed
