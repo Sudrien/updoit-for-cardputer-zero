@@ -11,7 +11,7 @@ if [ "$1" = "configure" ]; then
     # services). Created here because usr/lib/sysusers.d is not an allowed
     # store path. Idempotent: adduser --system succeeds if it already exists.
     if ! getent passwd "$P" >/dev/null; then
-        adduser --system --group --quiet --home "/var/lib/$P" --no-create-home \
+        adduser --system --group --quiet --home /nonexistent --no-create-home \
             --gecos "Updoit update check" "$P"
     fi
     # /var/lib/$P and launcher icon ownership come from the tmpfiles.d file.

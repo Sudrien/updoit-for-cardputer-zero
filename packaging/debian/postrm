@@ -12,11 +12,17 @@ if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     fi
 fi
 if [ "$1" = "purge" ]; then
-    # Counts cache and aria2 download cache; the service user is left in place,
-    # as Debian policy recommends.
+    # Counts cache and root's aria2 download cache, all under the package's own
+    # /var/lib directory (never a home directory; the service user's home is
+    # /nonexistent). Explicit files only, no recursive delete. The service
+    # user is left in place, as Debian policy recommends.
     rm -f /var/lib/updoit-for-cardputer-zero/status /etc/updoit.status
-    rmdir /var/lib/updoit-for-cardputer-zero 2>/dev/null || true
-    rm -f /var/cache/updoit/archives/*.deb /var/cache/updoit/archives/*.aria2
-    rmdir /var/cache/updoit/archives/partial /var/cache/updoit/archives /var/cache/updoit 2>/dev/null || true
+    rm -f /var/lib/updoit-for-cardputer-zero/archives/*.deb \
+          /var/lib/updoit-for-cardputer-zero/archives/*.aria2 \
+          /var/lib/updoit-for-cardputer-zero/archives/partial/*.deb \
+          /var/lib/updoit-for-cardputer-zero/archives/partial/*.aria2
+    rmdir /var/lib/updoit-for-cardputer-zero/archives/partial \
+          /var/lib/updoit-for-cardputer-zero/archives \
+          /var/lib/updoit-for-cardputer-zero 2>/dev/null || true
 fi
 exit 0

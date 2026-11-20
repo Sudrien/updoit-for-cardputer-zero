@@ -81,7 +81,7 @@ const char* phase_label(Phase phase) {
 
 std::string default_download_dir() {
     if (::geteuid() == 0) {
-        return "/var/cache/updoit/archives";
+        return "/var/lib/updoit-for-cardputer-zero/archives";
     }
     if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg && xdg[0] == '/') {
         return std::string(xdg) + "/updoit/archives";

@@ -112,7 +112,7 @@ private:
 };
 
 // Default staging directory: $XDG_CACHE_HOME/updoit/archives, ~/.cache/updoit/archives,
-// or /var/cache/updoit/archives for root.
+// or /var/lib/updoit-for-cardputer-zero/archives for root.
 std::string default_download_dir();
 
 } // namespace updater
