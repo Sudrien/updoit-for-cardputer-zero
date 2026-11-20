@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 #
-# Cross-builds the arm64 .deb for CardputerZero on every push and pull request.
-# Pushing a tag vX.Y.Z (matching the version in CMakeLists.txt and app-builder.json)
+# Cross-builds the arm64 .deb for CardputerZero on pull requests and v* tags.
+# Plain pushes to main do not build, so pushing a commit together with its tag runs
+# once, not twice. Pushing a tag vX.Y.Z (matching the version in CMakeLists.txt and app-builder.json)
 # also publishes a GitHub release with the .deb attached. A tag with a suffix, such as
 # v0.2.0-rc1, makes a pre-release.
 #
@@ -12,7 +13,6 @@ name: Build deb
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
