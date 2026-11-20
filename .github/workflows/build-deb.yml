@@ -1,0 +1,150 @@
+# SPDX-License-Identifier: MIT
+#
+# Cross-builds the arm64 .deb for CardputerZero on every push and pull request.
+# Pushing a tag vX.Y.Z (matching the version in CMakeLists.txt and app-builder.json)
+# also publishes a GitHub release with the .deb attached. A tag with a suffix, such as
+# v0.2.0-rc1, makes a pre-release.
+#
+# A manual run (Actions > Build deb > Run workflow) builds the chosen branch or tag;
+# tick "publish" while running it on a tag to (re)publish that tag's release.
+
+name: Build deb
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a GitHub release (only when run on a v* tag)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-deb-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      deb: ${{ steps.meta.outputs.deb }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            crossbuild-essential-arm64 ninja-build dpkg-dev file
+
+      - name: Ensure CMake 3.31 or newer
+        run: |
+          have=$(cmake --version 2>/dev/null | head -n1 | awk '{print $3}')
+          if [ -z "$have" ] || [ "$(printf '%s\n' 3.31 "$have" | sort -V | head -n1)" != 3.31 ]; then
+            pipx install "cmake>=3.31"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
+
+      - name: Read package metadata
+        id: meta
+        run: |
+          package=$(jq -r .package_name app-builder.json)
+          version=$(jq -r .version app-builder.json)
+          cmake_version=$(sed -n 's/^project([^ ]* VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+          if [ "$version" != "$cmake_version" ]; then
+            echo "::error::app-builder.json version ($version) differs from CMakeLists.txt ($cmake_version)"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            tag_version="${GITHUB_REF_NAME#v}"
+            if [ "${tag_version%%-*}" != "$version" ]; then
+              echo "::error::tag $GITHUB_REF_NAME does not match version $version"
+              exit 1
+            fi
+          fi
+          {
+            echo "package=$package"
+            echo "version=$version"
+            echo "deb=${package}_${version}_arm64.deb"
+          } >> "$GITHUB_OUTPUT"
+
+      # The device sysroot (sdk_bsp.tar.gz) and FetchContent sources land in .cache.
+      - name: Cache sysroot and dependencies
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: cp0-cache-${{ hashFiles('cmake/toolchains/*.cmake', 'CMakeLists.txt', 'CMakePresets.json') }}
+          restore-keys: cp0-cache-
+
+      - name: Build and package
+        run: cmake --workflow --preset cp0-cross-package
+
+      - name: Check and rename the package
+        run: |
+          shopt -s nullglob
+          debs=(dist/*.deb)
+          if [ "${#debs[@]}" -ne 1 ]; then
+            echo "::error::expected one .deb in dist/, found ${#debs[@]}"
+            exit 1
+          fi
+          mv "${debs[0]}" "dist/${{ steps.meta.outputs.deb }}"
+          deb="dist/${{ steps.meta.outputs.deb }}"
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb"
+          arch=$(dpkg-deb --field "$deb" Architecture)
+          [ "$arch" = arm64 ] || { echo "::error::Architecture is $arch"; exit 1; }
+          # every ELF in the package must be aarch64
+          tmp=$(mktemp -d)
+          dpkg-deb -x "$deb" "$tmp"
+          bad=$(find "$tmp" -type f -exec file {} + | grep ELF | grep -v 'ARM aarch64' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::non-aarch64 binaries in package:"
+            echo "$bad"
+            exit 1
+          fi
+          # The store rejects bundled systemd services that run as root; warn early.
+          if dpkg-deb --contents "$deb" | grep -E 'systemd/system/.*\.service$'; then
+            echo "::warning::package contains systemd service units; the store rejects ones that run as root"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.deb }}
+          path: dist/${{ steps.meta.outputs.deb }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') &&
+      (github.event_name == 'push' || inputs.publish)
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.deb }}
+          path: dist
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+          DEB: dist/${{ needs.build.outputs.deb }}
+        run: |
+          prerelease=()
+          [[ "$TAG" == *-* ]] && prerelease=(--prerelease)
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$DEB" --clobber
+          else
+            gh release create "$TAG" "$DEB" --title "$TAG" --generate-notes --verify-tag "${prerelease[@]}"
+          fi
