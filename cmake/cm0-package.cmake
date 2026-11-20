@@ -57,6 +57,12 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/updoit-badge-0.pn
     DESTINATION "${CMAKE_INSTALL_DATADIR}/APPLaunch/share/images"
     RENAME "updoit-for-cardputer-zero-live.png"
 )
+# Empty file updoit-check touches so the launcher reloads; shipped (not created
+# at runtime) so dpkg removes it, with no rm in postrm.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit-for-cardputer-zero-poke"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/APPLaunch/applications"
+    RENAME ".updoit-for-cardputer-zero-poke"
+)
 # File ownership declared for systemd-tmpfiles. The service user is created by
 # postinst (usr/lib/sysusers.d is not an allowed store path).
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/tmpfiles.d/updoit-for-cardputer-zero.conf"

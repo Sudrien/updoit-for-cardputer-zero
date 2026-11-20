@@ -6,23 +6,20 @@ dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
 # 0.2.1 moved the check settings under /etc/<package>/ (app store path rules).
 dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.2.1~ -- "$@"
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
-    rm -f /usr/share/APPLaunch/applications/.updoit-for-cardputer-zero-poke
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload >/dev/null 2>&1 || true
     fi
 fi
 if [ "$1" = "purge" ]; then
-    # Counts cache and root's aria2 download cache, all under the package's own
-    # /var/lib directory (never a home directory; the service user's home is
-    # /nonexistent). Explicit files only, no recursive delete. The service
-    # user is left in place, as Debian policy recommends.
-    rm -f /var/lib/updoit-for-cardputer-zero/status /etc/updoit.status
-    rm -f /var/lib/updoit-for-cardputer-zero/archives/*.deb \
-          /var/lib/updoit-for-cardputer-zero/archives/*.aria2 \
-          /var/lib/updoit-for-cardputer-zero/archives/partial/*.deb \
-          /var/lib/updoit-for-cardputer-zero/archives/partial/*.aria2
-    rmdir /var/lib/updoit-for-cardputer-zero/archives/partial \
-          /var/lib/updoit-for-cardputer-zero/archives \
-          /var/lib/updoit-for-cardputer-zero 2>/dev/null || true
+    # Counts cache and root's aria2 download cache, under the package's own
+    # state dir (not a home directory; the service user's home is /nonexistent).
+    # Explicit files only, no recursive delete. The service user is left in
+    # place, as Debian policy recommends. The launcher poke file is shipped in
+    # the package, so dpkg removes it.
+    STATE=/var/lib/updoit-for-cardputer-zero
+    rm -f "$STATE/status" \
+          "$STATE"/archives/*.deb "$STATE"/archives/*.aria2 \
+          "$STATE"/archives/partial/*.deb "$STATE"/archives/partial/*.aria2
+    rmdir "$STATE/archives/partial" "$STATE/archives" "$STATE" 2>/dev/null || true
 fi
 exit 0
