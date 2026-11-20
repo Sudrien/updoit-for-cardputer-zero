@@ -61,12 +61,16 @@ bool ResultScreen::handle_key(uint32_t key) {
     switch (key) {
         case LV_KEY_UP:
         case ';':
+        case 'f': // f/x: up/down without fn
+        case 'F':
         case 'w':
         case 'W':
             lv_obj_scroll_by_bounded(scroller_, 0, 30, LV_ANIM_ON);
             return true;
         case LV_KEY_DOWN:
         case '.':
+        case 'x':
+        case 'X':
         case 's':
         case 'S':
             lv_obj_scroll_by_bounded(scroller_, 0, -30, LV_ANIM_ON);

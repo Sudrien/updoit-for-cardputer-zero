@@ -33,15 +33,15 @@ PageHelp help_for(model::AppPage page) {
             return {"PASSWORD", {{{"type", "sudo password"}, {"ENTER", "Unlock"},
                                   {"BKSP", "Delete"}, {"ESC", "Quit"}}}, 4};
         case model::AppPage::Menu:
-            return {"MENU", {{{"UP / DOWN", "Choose"}, {"1 - 4", "Run directly"},
+            return {"MENU", {{{"UP/DN  F/X", "Choose"}, {"1 - 4", "Run directly"},
                               {"ENTER", "Run"}, {"ESC", "Quit"}}}, 4};
         case model::AppPage::Confirm:
-            return {"CONFIRM", {{{"UP / DOWN", "Scroll list"}, {"ENTER", "Download + install"},
+            return {"CONFIRM", {{{"UP/DN  F/X", "Scroll list"}, {"ENTER", "Download + install"},
                                  {"ESC", "Back"}}}, 3};
         case model::AppPage::Progress:
             return {"PROGRESS", {{{"ESC", "Cancel (not while"}, {"", "installing)"}}}, 2};
         case model::AppPage::Result:
-            return {"RESULT", {{{"UP / DOWN", "Scroll"}, {"ENTER / ESC", "Back to menu"}}}, 2};
+            return {"RESULT", {{{"UP/DN  F/X", "Scroll"}, {"ENTER / ESC", "Back to menu"}}}, 2};
     }
     return {"", {}, 0};
 }
