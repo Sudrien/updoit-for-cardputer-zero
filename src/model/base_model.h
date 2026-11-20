@@ -34,7 +34,7 @@ public:
     void set_menu_index(int index);
 
 private:
-    bool dark_mode_ = false;
+    bool dark_mode_ = true;
     AppPage current_page_ = AppPage::Menu;
     int menu_index_ = 0;
 };
