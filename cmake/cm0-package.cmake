@@ -12,7 +12,7 @@ set(APP_DISPLAY_NAME "Updoit")
 set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
 # still a template/M5Stack identity, so set your own name and email here.
-set(APP_MAINTAINER "TODO Your Name <todo@example.invalid>" CACHE STRING "Debian package maintainer")
+set(APP_MAINTAINER "Sudrien <_+github@sudrien.net>" CACHE STRING "Debian package maintainer")
 set(APP_PACKAGE_DESCRIPTION "apt updates for CardputerZero with parallel downloads" CACHE STRING "Debian package summary")
 # Off: the launcher starts Updoit from its .desktop entry. A boot-time service for the GUI
 # would take over the screen. (The background check uses its own timer, installed below.)
