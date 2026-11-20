@@ -3,8 +3,8 @@ set -e
 # 0.1.0 shipped the template's /etc/template-app.conf, which every app from the
 # template also ships; remove it (kept as .dpkg-bak if it was edited).
 dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
-# 0.3.0 moved the check settings under /etc/<package>/ (app store path rules).
-dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.3.0~ -- "$@"
+# 0.2.1 moved the check settings under /etc/<package>/ (app store path rules).
+dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.2.1~ -- "$@"
 if [ "$1" = "upgrade" ] && [ -d /run/systemd/system ]; then
     # Units before 0.3.0 were called updoit-check.*
     systemctl disable --now updoit-check.timer >/dev/null 2>&1 || true

@@ -47,10 +47,22 @@ install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit-check"
     DESTINATION "lib/updoit-for-cardputer-zero"
 )
 # Launcher icon variants with an update-count badge; updoit-check copies the right one
-# to share/images/updoit-for-cardputer-zero-live.png (not owned by the package).
+# to share/images/updoit-for-cardputer-zero-live.png.
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/"
     DESTINATION "${CMAKE_INSTALL_DATADIR}/updoit-for-cardputer-zero/icons"
     FILES_MATCHING PATTERN "updoit-badge-*.png"
+)
+# Shipped so the .desktop Icon= exists in the package; updoit-check rewrites it.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/updoit-badge-0.png"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/APPLaunch/share/images"
+    RENAME "updoit-for-cardputer-zero-live.png"
+)
+# User and file ownership declared for systemd, instead of chown/adduser in postinst.
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/sysusers.d/updoit-for-cardputer-zero.conf"
+    DESTINATION "lib/sysusers.d"
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/tmpfiles.d/updoit-for-cardputer-zero.conf"
+    DESTINATION "lib/tmpfiles.d"
 )
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit.conf"
     DESTINATION "/etc/updoit-for-cardputer-zero"

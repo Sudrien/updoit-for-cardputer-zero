@@ -69,11 +69,12 @@ thread that the UI polls every 100 ms.
 | `/etc/updoit-for-cardputer-zero/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
 | `/var/lib/updoit-for-cardputer-zero/status` | cached counts (upgrade, full-upgrade, autoremove) and last update time, written by the check; survives reboots |
 | `/usr/share/updoit-for-cardputer-zero/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
-| `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; not owned by the package, swapped by the check |
+| `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; shipped as the no-badge variant, rewritten by the check |
+| `/usr/lib/sysusers.d/updoit-for-cardputer-zero.conf`, `/usr/lib/tmpfiles.d/updoit-for-cardputer-zero.conf` | the check's service user, and ownership of its state dir, the live icon and the poke file |
 
 The badge works with the stock launcher, which watches its `applications/` folder. The daily
-check runs as the unprivileged `updoit-for-cardputer-zero` user (app store rule), so postinst
-gives that user the live icon and `applications/.updoit-for-cardputer-zero-poke`; the check
+check runs as the unprivileged `updoit-for-cardputer-zero` user (app store rule), so its
+tmpfiles.d entry gives that user the live icon and `applications/.updoit-for-cardputer-zero-poke`; the check
 rewrites both in place. When the app recounts as root after an upgrade it also creates and
 deletes a file there. The daily check can't run `apt-get update` as that user, so list
 refreshes come from the OS `apt-daily.timer` or the app's Refresh. Updoit's `.desktop` file is never rewritten,
