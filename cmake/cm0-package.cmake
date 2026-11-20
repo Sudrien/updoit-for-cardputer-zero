@@ -6,7 +6,9 @@
 
 include(GNUInstallDirs)
 
-set(APP_DISPLAY_NAME "Updoit For Cardputer Zero" CACHE STRING "Human-readable application name used by launchers (the package file name uses the Debian package name)")
+# Name shown by the launcher. A plain variable (not the template's cache entry) so a stale
+# CMake cache cannot keep an old name; the Debian package name comes from PROJECT_NAME.
+set(APP_DISPLAY_NAME "Updoit")
 set(APP_DEBIAN_REVISION "rev1" CACHE STRING "Debian package revision/vendor suffix")
 set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
@@ -60,7 +62,7 @@ install(FILES
     DESTINATION "lib/systemd/system"
 )
 
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/config/template-app.conf"
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/config/updoit-for-cardputer-zero.conf"
     DESTINATION "/etc"
 )
 
@@ -110,11 +112,12 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${APP_PACKAGE_DESCRIPTION}")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/LICENSE.txt")
 
-string(TOLOWER "${APP_DISPLAY_NAME}" APP_DEBIAN_PACKAGE_NAME)
-string(REGEX REPLACE "[^a-z0-9+.-]" "-" APP_DEBIAN_PACKAGE_NAME "${APP_DEBIAN_PACKAGE_NAME}")
+# Keep the package name stable (app-builder.json package_name, upgrades) whatever the
+# display name is.
+set(APP_DEBIAN_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_DEBIAN_PACKAGE_NAME "${APP_DEBIAN_PACKAGE_NAME}")
 # File name uses the Debian package name, so the path has no whitespace.
-set(CPACK_PACKAGE_FILE_NAME "${APP_DEBIAN_PACKAGE_NAME}_${PROJECT_VERSION}_${APP_DEBIAN_REVISION}_${APP_DEBIAN_ARCHITECTURE}")
+set(CPACK_PACKAGE_FILE_NAME "${APP_DEBIAN_PACKAGE_NAME}_v${PROJECT_VERSION}_${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_DEBIAN_PACKAGE_RELEASE "${APP_DEBIAN_REVISION}")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${APP_DEBIAN_ARCHITECTURE}")
@@ -136,6 +139,7 @@ configure_file(
 )
 set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
     "${APP_GENERATED_DIR}/conffiles"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/preinst"
     "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postinst"
     "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/prerm"
     "${CMAKE_CURRENT_SOURCE_DIR}/packaging/debian/postrm"

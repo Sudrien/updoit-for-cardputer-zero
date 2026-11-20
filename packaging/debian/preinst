@@ -1,0 +1,6 @@
+#!/bin/sh
+set -e
+# 0.1.0 shipped the template's /etc/template-app.conf, which every app from the
+# template also ships; remove it (kept as .dpkg-bak if it was edited).
+dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
+exit 0

@@ -1,7 +1,7 @@
 {
   "app_name": "Updoit",
   "package_name": "updoit-for-cardputer-zero",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "apt updates for CardputerZero with parallel downloads",
 
   "store": {

@@ -111,7 +111,7 @@ Common CMake cache options:
 | `USE_DESKTOP` | `ON` | Build SDL desktop simulator when `ON`; build embedded Linux target when `OFF`. |
 | `APP_NAME` | `updoit-for-cardputer-zero` | Application name used by installed asset lookup. |
 | `APP_ASSETS_ROOT` | empty | Optional runtime asset root. Expected layout includes `fonts/`, `images/`, etc. |
-| `APP_CONFIG_FILE` | platform default | Optional config path. Defaults to `config/template-app.conf` for desktop builds and `/etc/template-app.conf` for device builds. |
+| `APP_CONFIG_FILE` | platform default | Optional config path. Defaults to `config/updoit-for-cardputer-zero.conf` for desktop builds and `/etc/updoit-for-cardputer-zero.conf` for device builds. |
 | `APP_KEY_INPUT_DEVICE` | empty | Optional Linux evdev device path, e.g. `/dev/input/event0`. Empty means auto-scan `/dev/input/event*`. |
 | `APP_FRAMEBUFFER_DEVICE` | `/dev/fb0` | Linux framebuffer device used by embedded builds when `APP_USE_DRM=OFF`. |
 | `APP_USE_DRM` | `OFF` | Use LVGL's Linux DRM/KMS backend instead of fbdev for embedded builds. |
@@ -124,7 +124,7 @@ Asset lookup order:
 2. source-tree `assets/` for development
 3. `/usr/share/<APP_NAME>/` for installed deployments
 
-Theme startup behavior is configured in `config/template-app.conf`:
+Theme startup behavior is configured in `config/updoit-for-cardputer-zero.conf`:
 
 ```ini
 [application]
@@ -132,9 +132,9 @@ dark_mode=yes
 ```
 
 Set `dark_mode` to `yes` or `no`. The parser also accepts `true`/`false` and `1`/`0`.
-Installed device builds use `/etc/template-app.conf` as the system default. Changing the theme
+Installed device builds use `/etc/updoit-for-cardputer-zero.conf` as the system default. Changing the theme
 from the navigation bar (keyboard shortcut `6`) writes a per-user override to
-`$XDG_CONFIG_HOME/template-app/template-app.conf`, or `~/.config/template-app/template-app.conf`
+`$XDG_CONFIG_HOME/updoit-for-cardputer-zero/updoit-for-cardputer-zero.conf`, or `~/.config/updoit-for-cardputer-zero/updoit-for-cardputer-zero.conf`
 when `XDG_CONFIG_HOME` is not set. The per-user file takes precedence on the next launch.
 
 ## Desktop Builds
@@ -407,7 +407,7 @@ By default, the debian package is copied to '$HOME' folder, normally it's under 
 On your device, install the copied package with `apt` and replace the package file name with the one you copied:
 
 ```shell
-sudo apt install --no-install-recommends ./updoit-for-cardputer-zero_0.2.1_rev1_arm64.deb
+sudo apt install --no-install-recommends ./updoit-for-cardputer-zero_v<version>_arm64.deb
 ```
 
 
@@ -456,13 +456,13 @@ cmake --preset darwin-arm64 -DAPP_ASSETS_ROOT=/path/to/assets
 Debian packages are produced with CPack and written to `dist/`. The package file name follows:
 
 ```text
-<package-name>_<Version>_<Revision>_arm64.deb
+<package-name>_v<Version>_arm64.deb
 ```
 
 Default example:
 
 ```text
-dist/updoit-for-cardputer-zero_0.2.1_rev1_arm64.deb
+dist/updoit-for-cardputer-zero_v<version>_arm64.deb
 ```
 
 Package layout:
@@ -470,7 +470,7 @@ Package layout:
 | Path | Content |
 | --- | --- |
 | `/usr/bin/updoit-for-cardputer-zero` | Application executable. |
-| `/etc/template-app.conf` | System-default application settings, including the startup theme. |
+| `/etc/updoit-for-cardputer-zero.conf` | System-default application settings, including the startup theme. |
 | `/usr/share/updoit-for-cardputer-zero/` | Runtime assets: fonts, images, audio. |
 | `/usr/share/APPLaunch/applications/updoit-for-cardputer-zero.desktop` | APPLaunch launcher entry. |
 | `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero*.png` | APPLaunch launcher icons/fallbacks. |
