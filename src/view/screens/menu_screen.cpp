@@ -91,10 +91,8 @@ bool MenuScreen::handle_key(uint32_t key) {
         case ',':
         case 'f': // f/x: up/down without fn
         case 'F':
-        case 'w': // letters work as arrows too
-        case 'W':
-        case 'a':
-        case 'A':
+        case 'z': // z/c: left/right, as labelled on the keys
+        case 'Z':
             vm.menu_move(-1);
             return true;
         case LV_KEY_DOWN:
@@ -103,10 +101,8 @@ bool MenuScreen::handle_key(uint32_t key) {
         case '/':
         case 'x':
         case 'X':
-        case 's':
-        case 'S':
-        case 'd':
-        case 'D':
+        case 'c':
+        case 'C':
             vm.menu_move(1);
             return true;
         case LV_KEY_ENTER:
