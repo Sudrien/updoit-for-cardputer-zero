@@ -9,7 +9,6 @@ include(GNUInstallDirs)
 # Name shown by the launcher. A plain variable (not the template's cache entry) so a stale
 # CMake cache cannot keep an old name; the Debian package name comes from PROJECT_NAME.
 set(APP_DISPLAY_NAME "Updoit")
-set(APP_DEBIAN_REVISION "rev1" CACHE STRING "Debian package revision/vendor suffix")
 set(APP_DEBIAN_ARCHITECTURE "arm64" CACHE STRING "Debian package architecture")
 # Deliberately a placeholder: the store rejects packages whose Maintainer is
 # still a template/M5Stack identity, so set your own name and email here.
@@ -119,7 +118,6 @@ set(CPACK_DEBIAN_PACKAGE_NAME "${APP_DEBIAN_PACKAGE_NAME}")
 # File name uses the Debian package name, so the path has no whitespace.
 set(CPACK_PACKAGE_FILE_NAME "${APP_DEBIAN_PACKAGE_NAME}_v${PROJECT_VERSION}_${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_DEBIAN_PACKAGE_RELEASE "${APP_DEBIAN_REVISION}")
 set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${APP_MAINTAINER}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
