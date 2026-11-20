@@ -57,10 +57,8 @@ install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/updoit-badge-0.pn
     DESTINATION "${CMAKE_INSTALL_DATADIR}/APPLaunch/share/images"
     RENAME "updoit-for-cardputer-zero-live.png"
 )
-# User and file ownership declared for systemd, instead of chown/adduser in postinst.
-install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/sysusers.d/updoit-for-cardputer-zero.conf"
-    DESTINATION "lib/sysusers.d"
-)
+# File ownership declared for systemd-tmpfiles. The service user is created by
+# postinst (usr/lib/sysusers.d is not an allowed store path).
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/tmpfiles.d/updoit-for-cardputer-zero.conf"
     DESTINATION "lib/tmpfiles.d"
 )
@@ -135,7 +133,7 @@ set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "${APP_DEBIAN_ARCHITECTURE}")
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${APP_MAINTAINER}")
 set(CPACK_DEBIAN_PACKAGE_SECTION "utils")
 set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-set(APP_DEBIAN_DEPENDS "libc6, libstdc++6, libgcc-s1, libfreetype6, libpng16-16, libjpeg62-turbo, zlib1g, apt, aria2, sudo")
+set(APP_DEBIAN_DEPENDS "libc6, libstdc++6, libgcc-s1, libfreetype6, libpng16-16, libjpeg62-turbo, zlib1g, apt, aria2, sudo, adduser")
 if(FMT_INCLUDE_DIR AND FMT_LIBRARY)
     string(APPEND APP_DEBIAN_DEPENDS ", libfmt10")
 endif()

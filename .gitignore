@@ -148,6 +148,6 @@ temp/
 
 # TODOS
 TODO
-# systemd drop-in dirs (sysusers.d, tmpfiles.d) are sources, not dependency files
+# systemd drop-in dirs (tmpfiles.d) are sources, not dependency files
 !packaging/*.d/
 !packaging/*.d/**

@@ -70,7 +70,7 @@ thread that the UI polls every 100 ms.
 | `/var/lib/updoit-for-cardputer-zero/status` | cached counts (upgrade, full-upgrade, autoremove) and last update time, written by the check; survives reboots |
 | `/usr/share/updoit-for-cardputer-zero/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
 | `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; shipped as the no-badge variant, rewritten by the check |
-| `/usr/lib/sysusers.d/updoit-for-cardputer-zero.conf`, `/usr/lib/tmpfiles.d/updoit-for-cardputer-zero.conf` | the check's service user, and ownership of its state dir, the live icon and the poke file |
+| `/usr/lib/tmpfiles.d/updoit-for-cardputer-zero.conf` | ownership of the check's state dir, the live icon and the poke file (the service user itself is created by `postinst`) |
 
 The badge works with the stock launcher, which watches its `applications/` folder. The daily
 check runs as the unprivileged `updoit-for-cardputer-zero` user (app store rule), so its

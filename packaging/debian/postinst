@@ -7,9 +7,14 @@ dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
 dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.2.1~ -- "$@"
 P=updoit-for-cardputer-zero
 if [ "$1" = "configure" ]; then
-    # Service user, /var/lib/$P and launcher icon ownership come from the
-    # sysusers.d and tmpfiles.d files in the package.
-    systemd-sysusers "$P.conf" >/dev/null 2>&1 || true
+    # Unprivileged service user for $P-check.service (store rule: no root
+    # services). Created here because usr/lib/sysusers.d is not an allowed
+    # store path. Idempotent: adduser --system succeeds if it already exists.
+    if ! getent passwd "$P" >/dev/null; then
+        adduser --system --group --quiet --home "/var/lib/$P" --no-create-home \
+            --gecos "Updoit update check" "$P"
+    fi
+    # /var/lib/$P and launcher icon ownership come from the tmpfiles.d file.
     systemd-tmpfiles --create "$P.conf" >/dev/null 2>&1 || true
     # Status file from before 0.2.1
     if [ -f /etc/updoit.status ] && [ ! -e "/var/lib/$P/status" ]; then
