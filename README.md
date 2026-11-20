@@ -77,7 +77,8 @@ check runs as the unprivileged `updoit-for-cardputer-zero` user (app store rule)
 tmpfiles.d entry gives that user the live icon and `applications/.updoit-for-cardputer-zero-poke`; the check
 rewrites both in place. When the app recounts as root after an upgrade it also creates and
 deletes a file there. The daily check can't run `apt-get update` as that user, so list
-refreshes come from the OS `apt-daily.timer` or the app's Refresh. Updoit's `.desktop` file is never rewritten,
+refreshes come from the OS `apt-daily.timer` (turned on by the `apt-config-auto-update`
+dependency) or the app's Refresh. Updoit's `.desktop` file is never rewritten,
 because the launcher orders apps by that file's modification time. Icons are rendered from
 `assets/images/updoit-icon-skull.svg` with `scripts/render-icons.sh`.
 
