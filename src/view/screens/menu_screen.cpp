@@ -42,7 +42,7 @@ void MenuScreen::build_content(lv_obj_t* content) {
     reactive::bind_label_text(status, view_model().updates_text_subject());
     style::accent(status, dark, style::Accent::Part::Text, style::Accent::Tone::Muted);
 
-    // Rows live in a scrolling list: six rows do not fit the content area at once.
+    // Rows live in a scrolling list: seven rows do not fit the content area at once.
     auto* list = style::box(column);
     lv_obj_set_width(list, LV_PCT(100));
     lv_obj_set_height(list, 5 * 17); // exactly five rows, so none is half cut off
@@ -71,6 +71,9 @@ void MenuScreen::build_content(lv_obj_t* content) {
         auto* name = style::label(row, dark, style::font(assets(), 14, true),
                                   viewmodel::BaseViewModel::menu_label(i));
         lv_obj_align(name, LV_ALIGN_LEFT_MID, 16, 0);
+        if (i == model::kMenuDailyRefresh) {
+            reactive::bind_label_text(name, view_model().daily_label_subject());
+        }
 
         auto* hint = style::label(row, dark, style::font(assets(), 12));
         reactive::bind_label_text(hint, view_model().menu_hint_subject(i));

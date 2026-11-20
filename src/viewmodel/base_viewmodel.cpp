@@ -6,6 +6,7 @@
 
 #include "base_viewmodel.h"
 
+#include "daily_refresh.h"
 #include "status_cache.h"
 
 #include <chrono>
@@ -73,7 +74,8 @@ updater::JobConfig job_config() {
     return config;
 }
 
-constexpr Operation kMenuOps[model::kMenuItemCount] = {
+// The last row (kMenuDailyRefresh) is not an apt operation; menu_select handles it.
+constexpr Operation kMenuOps[model::kMenuDailyRefresh] = {
     Operation::Refresh,
     Operation::Download,
     Operation::Upgrade,
@@ -97,7 +99,9 @@ BaseViewModel::BaseViewModel()
       updates_text_subject_(""),
       menu_hint_subject_{reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
                          reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
-                         reactive::StringSubject<24>(""), reactive::StringSubject<24>("")},
+                         reactive::StringSubject<24>(""), reactive::StringSubject<24>(""),
+                         reactive::StringSubject<24>("")},
+      daily_label_subject_(""),
       confirm_summary_subject_(""),
       progress_title_subject_(""),
       progress_detail_subject_(""),
@@ -287,15 +291,38 @@ const char* BaseViewModel::menu_label(int index) {
         return "";
     }
     // Show the real command, so the menu teaches what it runs (apt-get under the hood).
+    // The daily-refresh row's label is live: see daily_label_subject().
     static const char* const kLabels[model::kMenuItemCount] = {
         "apt update",     "apt dist-upgrade -d", "apt upgrade",
         "apt dist-upgrade", "apt autoremove",    "apt clean",
+        "Turn daily check on",
     };
     return kLabels[index];
 }
 
 lv_subject_t* BaseViewModel::menu_hint_subject(int index) {
     return menu_hint_subject_[index].native();
+}
+
+lv_subject_t* BaseViewModel::daily_label_subject() { return daily_label_subject_.native(); }
+
+void BaseViewModel::refresh_daily_row() {
+    daily_refresh_on_ = updater::daily_refresh_enabled();
+    daily_label_subject_.set(daily_refresh_on_ ? "Turn daily check off" : "Turn daily check on");
+    menu_hint_subject_[model::kMenuDailyRefresh].set(daily_refresh_on_ ? "is on" : "is off");
+}
+
+void BaseViewModel::toggle_daily_refresh() {
+    std::string error;
+    if (updater::set_daily_refresh(privilege_, !daily_refresh_on_, error)) {
+        refresh_daily_row();
+        return;
+    }
+    refresh_daily_row();
+    result_title_subject_.set("Failed");
+    result_tone_subject_.set(1);
+    result_text_subject_.set(("Could not change the daily check.\n" + error).substr(0, 500).c_str());
+    show_page(model::AppPage::Result);
 }
 
 void BaseViewModel::refresh_updates_text() {
@@ -336,6 +363,7 @@ void BaseViewModel::refresh_updates_text() {
                                   ? "?"
                                   : (cache.cache_bytes == 0 ? "empty"
                                                             : updater::format_bytes(cache.cache_bytes).c_str()));
+    refresh_daily_row();
 }
 
 void BaseViewModel::menu_move(int delta) {
@@ -347,6 +375,10 @@ void BaseViewModel::menu_select(int index) {
     if (index >= 0) {
         model_.set_menu_index(index);
         menu_index_subject_.set(model_.menu_index());
+    }
+    if (model_.menu_index() == model::kMenuDailyRefresh) {
+        toggle_daily_refresh();
+        return;
     }
     const auto op = kMenuOps[model_.menu_index()];
     if (job_->start(op)) {

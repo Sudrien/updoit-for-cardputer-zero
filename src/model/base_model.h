@@ -16,7 +16,9 @@ enum class AppPage {
     Result   = 4, // done / failed / cancelled
 };
 
-constexpr int kMenuItemCount = 6;
+constexpr int kMenuItemCount = 7;
+// Last row: switch APT's daily list refresh on/off (not an apt operation).
+constexpr int kMenuDailyRefresh = 6;
 
 class BaseModel {
 public:

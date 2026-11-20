@@ -62,6 +62,8 @@ public:
     lv_subject_t* updates_text_subject();
     static const char* menu_label(int index);
     lv_subject_t* menu_hint_subject(int index);
+    // Label of the daily-refresh row, which changes with its state.
+    lv_subject_t* daily_label_subject();
     void menu_move(int delta);
     void menu_select(int index = -1);
 
@@ -92,6 +94,8 @@ public:
 private:
     void show_page(model::AppPage page);
     void refresh_updates_text();
+    void refresh_daily_row();
+    void toggle_daily_refresh();
     void publish_job(const updater::JobSnapshot& s);
     void publish_password_mask();
 
@@ -122,6 +126,8 @@ private:
     reactive::StringSubject<96> progress_detail_subject_;
     reactive::IntSubject progress_value_subject_;
     reactive::StringSubject<24> menu_hint_subject_[model::kMenuItemCount];
+    reactive::StringSubject<32> daily_label_subject_;
+    bool daily_refresh_on_ = false;
     reactive::StringSubject<64> file_name_subject_[kFileSlots];
     reactive::IntSubject file_value_subject_[kFileSlots];
     reactive::StringSubject<128> log_line_subject_;

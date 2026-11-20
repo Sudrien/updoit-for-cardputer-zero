@@ -7,8 +7,8 @@ After=network-online.target
 [Service]
 Type=oneshot
 # Store rule: services must not run as root. As this user the check cannot run
-# "apt-get update" (the OS apt-daily.timer, enabled by the apt-config-auto-update
-# dependency, and the app's Refresh do that); it
+# "apt-get update" (the OS apt-daily.timer, when the app's "Turn daily check on"
+# is set, and the app's Refresh do that); it
 # recounts from the current lists and updates the badge.
 User=updoit-for-cardputer-zero
 Group=updoit-for-cardputer-zero

@@ -33,7 +33,7 @@ PageHelp help_for(model::AppPage page) {
             return {"PASSWORD", {{{"type", "sudo password"}, {"ENTER", "Unlock"},
                                   {"BKSP", "Delete"}, {"ESC", "Quit"}}}, 4};
         case model::AppPage::Menu:
-            return {"MENU", {{{"UP/DN  F/X", "Choose"}, {"1 - 4", "Run directly"},
+            return {"MENU", {{{"UP/DN  F/X", "Choose"}, {"1 - 7", "Run directly"},
                               {"ENTER", "Run"}, {"ESC", "Quit"}}}, 4};
         case model::AppPage::Confirm:
             return {"CONFIRM", {{{"UP/DN  F/X", "Scroll list"}, {"ENTER", "Download + install"},
