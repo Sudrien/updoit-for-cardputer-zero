@@ -4,31 +4,33 @@
 # updoit-check: refresh apt lists and cache the number of upgradable packages,
 # like DietPi's CONFIG_CHECK_APT_UPDATES daily check.
 #
-#   updoit-check              run from updoit-check.timer; honours /etc/updoit.conf
+#   updoit-check              run from updoit-for-cardputer-zero-check.timer; honours /etc/updoit-for-cardputer-zero/updoit.conf
 #   updoit-check --no-update  only recount from the current lists (used by the app
 #                             after an upgrade)
 #   updoit-check --updated    like --no-update, but record that the lists were just
 #                             refreshed (used by the app after "Refresh lists")
 #
-# Output: /etc/updoit.status (key=value, see src/updater/status_cache.h). It lives in /etc
-#         so the counts and the last update time survive a reboot.
-#         and the launcher icon with a red count badge (see update_icon below).
+# Output: /var/lib/updoit-for-cardputer-zero/status (key=value, see src/updater/status_cache.h), so the
+#         counts and the last update time survive a reboot, and the launcher icon with a red count badge (see update_icon below).
 
 set -u
 
-CONF=/etc/updoit.conf
-OUT=${UPDOIT_STATUS_FILE:-/etc/updoit.status}
+CONF=/etc/updoit-for-cardputer-zero/updoit.conf
+OUT=${UPDOIT_STATUS_FILE:-/var/lib/updoit-for-cardputer-zero/status}
 OUT_DIR=$(dirname "$OUT")
 
 # Launcher integration (overridable for testing).
 APPLAUNCH_DIR=${UPDOIT_APPLAUNCH_DIR:-/usr/share/APPLaunch}
-BADGE_DIR=${UPDOIT_BADGE_DIR:-/usr/share/updoit/icons}
+BADGE_DIR=${UPDOIT_BADGE_DIR:-/usr/share/updoit-for-cardputer-zero/icons}
 LIVE_ICON="$APPLAUNCH_DIR/share/images/updoit-for-cardputer-zero-live.png"
 
+POKE="$APPLAUNCH_DIR/applications/.updoit-for-cardputer-zero-poke"
+
 # The .desktop entry points at LIVE_ICON, which the package does not own. Copy the
-# matching pre-rendered badge over it, then nudge the launcher: it watches its
-# applications/ directory and reloads every icon on a create/delete there. The
-# .desktop file itself is left alone, because the launcher orders apps by its mtime.
+# matching pre-rendered badge over it, then nudge the launcher, which watches its
+# applications/ directory. The timer runs as a non-root user, so postinst hands that
+# user LIVE_ICON and POKE, and both are rewritten in place (no new files in root-owned
+# directories). The .desktop file is left alone: the launcher orders apps by its mtime.
 update_icon() { # $1 = upgradable count
     case "$1" in
         0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9) variant=$1 ;;
@@ -40,11 +42,14 @@ update_icon() { # $1 = upgradable count
     if cmp -s "$src" "$LIVE_ICON" 2>/dev/null; then
         return 0
     fi
-    cp -f "$src" "$LIVE_ICON.tmp.$$" && chmod 644 "$LIVE_ICON.tmp.$$" &&
-        mv -f "$LIVE_ICON.tmp.$$" "$LIVE_ICON"
+    cat "$src" >"$LIVE_ICON" 2>/dev/null || return 0
     if [ -d "$APPLAUNCH_DIR/applications" ]; then
-        poke="$APPLAUNCH_DIR/applications/.updoit-icon-changed"
-        : >"$poke" 2>/dev/null && rm -f "$poke"
+        date +%s >"$POKE" 2>/dev/null || true
+        # As root (the app's sudo recount) also create/delete, which every
+        # launcher version reacts to.
+        if [ -w "$APPLAUNCH_DIR/applications" ]; then
+            : >"$POKE.new" 2>/dev/null && rm -f "$POKE.new"
+        fi
     fi
 }
 
@@ -74,6 +79,8 @@ export LC_ALL=C LANG=C DEBIAN_FRONTEND=noninteractive
 error=""
 updated=$(old_value updated)
 [ "$stamp_updated" -eq 1 ] && updated=$(date +%s)
+# apt-get update needs root; as the timer's user, only recount.
+[ "$(id -u)" -eq 0 ] || no_update=1
 if [ "$no_update" -eq 0 ]; then
     if ! apt-get -qq -o DPkg::Lock::Timeout=300 update >/dev/null 2>"$OUT.err.$$"; then
         error=$(grep '^E:' "$OUT.err.$$" | head -n 1 | tr -d '\n')

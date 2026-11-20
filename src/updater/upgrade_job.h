@@ -58,7 +58,7 @@ struct JobSnapshot {
 struct JobConfig {
     std::string download_dir;           // user-writable staging dir for .deb files
     std::string apt_archives = "/var/cache/apt/archives";
-    std::string status_helper = "/usr/libexec/updoit/updoit-check";
+    std::string status_helper = "/usr/lib/updoit-for-cardputer-zero/updoit-check";
     int parallel_files = 4;
     int connections_per_file = 2;
     std::string max_download_rate; // aria2 syntax ("500K"); empty = unlimited

@@ -3,16 +3,41 @@ set -e
 # 0.1.0 shipped the template's /etc/template-app.conf, which every app from the
 # template also ships; remove it (kept as .dpkg-bak if it was edited).
 dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
-if [ "$1" = "configure" ] && [ -d /run/systemd/system ]; then
-    systemctl daemon-reload >/dev/null 2>&1 || true
-    systemctl enable updoit-check.timer >/dev/null 2>&1 || true
-    systemctl start updoit-check.timer >/dev/null 2>&1 || true
+# 0.3.0 moved the check settings under /etc/<package>/ (app store path rules).
+dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.3.0~ -- "$@"
+P=updoit-for-cardputer-zero
+live=/usr/share/APPLaunch/share/images/$P-live.png
+poke=/usr/share/APPLaunch/applications/.$P-poke
+if [ "$1" = "configure" ]; then
+    # The check timer runs as this unprivileged system user (store rule: no root services).
+    if ! getent passwd "$P" >/dev/null; then
+        adduser --system --group --no-create-home --home "/var/lib/$P" \
+            --gecos "Updoit update check" "$P" >/dev/null 2>&1 ||
+            useradd --system --user-group --no-create-home --home-dir "/var/lib/$P" \
+                --shell /usr/sbin/nologin "$P"
+    fi
+    install -d -m 0755 -o "$P" -g "$P" "/var/lib/$P"
+    # Pre-0.3.0 status file
+    if [ -f /etc/updoit.status ]; then
+        [ -e "/var/lib/$P/status" ] || mv /etc/updoit.status "/var/lib/$P/status"
+        rm -f /etc/updoit.status
+    fi
+    [ ! -e "/var/lib/$P/status" ] || chown "$P:$P" "/var/lib/$P/status"
+    # Launcher icon and poke file: created here as root, then owned by the check user so
+    # it can rewrite them in place.
+    if [ -d "$(dirname "$live")" ]; then
+        [ -e "$live" ] || cp -f "/usr/share/$P/icons/updoit-badge-0.png" "$live"
+        chown "$P:$P" "$live"; chmod 0644 "$live"
+    fi
+    if [ -d "$(dirname "$poke")" ]; then
+        touch "$poke"; chown "$P:$P" "$poke"; chmod 0644 "$poke"
+    fi
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload >/dev/null 2>&1 || true
+        systemctl enable $P-check.timer >/dev/null 2>&1 || true
+        systemctl start $P-check.timer >/dev/null 2>&1 || true
+    fi
+    # First count (and badge) right away from the current lists, no network needed.
+    /usr/lib/$P/updoit-check --no-update >/dev/null 2>&1 || true
 fi
-# Make sure the launcher icon exists even if counting fails, then produce a first count
-# (and badge) right away from the current lists (no network needed).
-live=/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png
-if [ ! -e "$live" ] && [ -d "$(dirname "$live")" ]; then
-    cp -f /usr/share/updoit/icons/updoit-badge-0.png "$live" 2>/dev/null || true
-fi
-/usr/libexec/updoit/updoit-check --no-update >/dev/null 2>&1 || true
 exit 0

@@ -3,12 +3,23 @@ set -e
 # 0.1.0 shipped the template's /etc/template-app.conf, which every app from the
 # template also ships; remove it (kept as .dpkg-bak if it was edited).
 dpkg-maintscript-helper rm_conffile /etc/template-app.conf 0.1.1~ -- "$@"
+# 0.3.0 moved the check settings under /etc/<package>/ (app store path rules).
+dpkg-maintscript-helper mv_conffile /etc/updoit.conf /etc/updoit-for-cardputer-zero/updoit.conf 0.3.0~ -- "$@"
+P=updoit-for-cardputer-zero
 if [ "$1" = "remove" ] || [ "$1" = "purge" ]; then
     rm -rf /run/updoit /var/cache/updoit
     rm -f /etc/updoit.status
-    rm -f /usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png
+    rm -f "/usr/share/APPLaunch/share/images/$P-live.png" \
+        "/usr/share/APPLaunch/applications/.$P-poke"
     if [ -d /run/systemd/system ]; then
         systemctl daemon-reload >/dev/null 2>&1 || true
     fi
+fi
+if [ "$1" = "purge" ]; then
+    rm -rf "/var/lib/$P"
+    if getent passwd "$P" >/dev/null; then
+        deluser --system "$P" >/dev/null 2>&1 || userdel "$P" >/dev/null 2>&1 || true
+    fi
+    getent group "$P" >/dev/null && { delgroup --system "$P" >/dev/null 2>&1 || groupdel "$P" >/dev/null 2>&1 || true; }
 fi
 exit 0

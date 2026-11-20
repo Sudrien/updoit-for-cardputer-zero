@@ -1,0 +1,17 @@
+[Unit]
+Description=Updoit: check for apt package updates
+Documentation=https://github.com/Sudrien/updoit-for-cardputer-zero
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Store rule: services must not run as root. As this user the check cannot run
+# "apt-get update" (the OS apt-daily.timer and the app's Refresh do that); it
+# recounts from the current lists and updates the badge.
+User=updoit-for-cardputer-zero
+Group=updoit-for-cardputer-zero
+ExecStart=/usr/lib/updoit-for-cardputer-zero/updoit-check
+NoNewPrivileges=yes
+Nice=10
+IOSchedulingClass=idle

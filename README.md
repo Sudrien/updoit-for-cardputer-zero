@@ -15,7 +15,7 @@
   apt clean** from a keyboard-driven 320x170 UI, run as the matching `apt-get` commands.
   `-d` downloads everything now and installs nothing, so a later upgrade needs no network.
 - **Each menu row shows what it would do**: package counts, the time of the last update and
-  the size of the package cache, cached in `/etc/updoit.status`.
+  the size of the package cache, cached in `/var/lib/updoit-for-cardputer-zero/status`.
 - **Confirm first**: shows what will be upgraded, installed, removed or kept back, and the
   download size, before anything changes.
 - **Parallel downloads** with `aria2c` (4 files at once, 2 connections each), with overall
@@ -53,7 +53,7 @@ Hold `Esc` to quit from anywhere except during install. `Fn`+`H` shows help.
    same filesystem) and owned by root, then `apt-get <verb>` runs. apt re-checks every hash and
    reports `Need to get 0 B`. Status is read on fd 3; using `APT::Status-Fd=1` breaks maintainer
    scripts that print to stdout.
-4. **Recount**: `/usr/libexec/updoit/updoit-check --no-update` refreshes the menu's count.
+4. **Recount**: `/usr/lib/updoit-for-cardputer-zero/updoit-check --no-update` refreshes the menu's count.
 
 The backend (`src/updater/`) is plain C++17 with no LVGL dependency, and runs on a worker
 thread that the UI polls every 100 ms.
@@ -63,17 +63,20 @@ thread that the UI polls every 100 ms.
 | Path | Purpose |
 | --- | --- |
 | `/usr/bin/updoit-for-cardputer-zero` | the app (started by the launcher) |
-| `/usr/libexec/updoit/updoit-check` | daily check script |
-| `/usr/libexec/updoit/updoit-cli` | headless driver, useful over SSH |
-| `/lib/systemd/system/updoit-check.{service,timer}` | 10 min after boot, then daily |
-| `/etc/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
-| `/etc/updoit.status` | cached counts (upgrade, full-upgrade, autoremove) and last update time, written by the check; in `/etc` so it survives reboots |
-| `/usr/share/updoit/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
+| `/usr/lib/updoit-for-cardputer-zero/updoit-check` | daily check script |
+| `/usr/lib/updoit-for-cardputer-zero/updoit-cli` | headless driver, useful over SSH |
+| `/lib/systemd/system/updoit-for-cardputer-zero-check.{service,timer}` | 10 min after boot, then daily |
+| `/etc/updoit-for-cardputer-zero/updoit.conf` | `UPDOIT_CHECK_APT_UPDATES=0/1/2` (off / check only / auto, planned) |
+| `/var/lib/updoit-for-cardputer-zero/status` | cached counts (upgrade, full-upgrade, autoremove) and last update time, written by the check; survives reboots |
+| `/usr/share/updoit-for-cardputer-zero/icons/updoit-badge-*.png` | icon variants: no badge, 1-9, 9+ |
 | `/usr/share/APPLaunch/share/images/updoit-for-cardputer-zero-live.png` | the icon the launcher shows; not owned by the package, swapped by the check |
 
-The badge works with the stock launcher: it reloads all icons when anything is created or
-deleted in its `applications/` folder, so the check swaps the live icon and then creates and
-deletes `applications/.updoit-icon-changed`. Updoit's `.desktop` file is never rewritten,
+The badge works with the stock launcher, which watches its `applications/` folder. The daily
+check runs as the unprivileged `updoit-for-cardputer-zero` user (app store rule), so postinst
+gives that user the live icon and `applications/.updoit-for-cardputer-zero-poke`; the check
+rewrites both in place. When the app recounts as root after an upgrade it also creates and
+deletes a file there. The daily check can't run `apt-get update` as that user, so list
+refreshes come from the OS `apt-daily.timer` or the app's Refresh. Updoit's `.desktop` file is never rewritten,
 because the launcher orders apps by that file's modification time. Icons are rendered from
 `assets/images/updoit-icon-skull.svg` with `scripts/render-icons.sh`.
 

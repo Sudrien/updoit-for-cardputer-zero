@@ -10,7 +10,7 @@
 
 namespace updater {
 
-constexpr const char* kStatusCachePath = "/etc/updoit.status";
+constexpr const char* kStatusCachePath = "/var/lib/updoit-for-cardputer-zero/status";
 
 // Written by updoit-check (root, systemd timer). Format, one key=value per line:
 //   checked=<unix seconds>            when the counts were made

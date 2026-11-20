@@ -38,25 +38,26 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 install(TARGETS updoit-cli
-    RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
+    # store rule: helpers live in usr/lib/<pkg>/
+    RUNTIME DESTINATION "lib/updoit-for-cardputer-zero"
 )
 
 # Background apt check (DietPi-style daily timer)
 install(PROGRAMS "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit-check"
-    DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/updoit"
+    DESTINATION "lib/updoit-for-cardputer-zero"
 )
 # Launcher icon variants with an update-count badge; updoit-check copies the right one
 # to share/images/updoit-for-cardputer-zero-live.png (not owned by the package).
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/assets/images/badge/"
-    DESTINATION "${CMAKE_INSTALL_DATADIR}/updoit/icons"
+    DESTINATION "${CMAKE_INSTALL_DATADIR}/updoit-for-cardputer-zero/icons"
     FILES_MATCHING PATTERN "updoit-badge-*.png"
 )
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/packaging/updoit.conf"
-    DESTINATION "/etc"
+    DESTINATION "/etc/updoit-for-cardputer-zero"
 )
 install(FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-check.service"
-    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-check.timer"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-for-cardputer-zero-check.service"
+    "${CMAKE_CURRENT_SOURCE_DIR}/packaging/systemd/updoit-for-cardputer-zero-check.timer"
     # literal "lib": CMAKE_INSTALL_LIBDIR can be a multiarch dir, which systemd ignores
     DESTINATION "lib/systemd/system"
 )
