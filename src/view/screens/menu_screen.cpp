@@ -87,8 +87,6 @@ bool MenuScreen::handle_key(uint32_t key) {
     switch (key) {
         case LV_KEY_UP:
         case LV_KEY_LEFT:
-        case ';': // Cardputer arrow keys without fn
-        case ',':
         case 'f': // f/x: up/down without fn
         case 'F':
         case 'z': // z/c: left/right, as labelled on the keys
@@ -97,8 +95,6 @@ bool MenuScreen::handle_key(uint32_t key) {
             return true;
         case LV_KEY_DOWN:
         case LV_KEY_RIGHT:
-        case '.':
-        case '/':
         case 'x':
         case 'X':
         case 'c':
