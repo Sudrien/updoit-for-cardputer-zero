@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./screenshot/updoit-launcher.png" alt="Updoit in the launcher, with 8 updates pending" width="320" />
+  <img src="./screenshot/updoit-launcher-mockup.png" alt="Updoit in the launcher, with 4 updates pending (mockup)" width="320" />
   <img src="./screenshot/updoit-menu.png" alt="Updoit menu" width="320" />
   <img src="./screenshot/updoit-download.png" alt="Updoit downloading packages in parallel" width="320" />
 </p>
@@ -93,6 +93,25 @@ updoit-cli full-upgrade --yes --limit=500K
 for watching the progress screen.
 
 Parser tests: `ctest --test-dir build/linux-x86-64 -C Debug`.
+
+## Screenshots
+
+| | |
+| --- | --- |
+| <img src="./screenshot/updoit-launcher-mockup.png" alt="Updoit in the launcher (mockup)" width="320" /> | <img src="./screenshot/updoit-password.png" alt="Password page" width="320" /> |
+| Launcher, with the pending-updates badge (mockup) | **Password**: asked once, kept in memory only |
+| <img src="./screenshot/updoit-menu.png" alt="Menu" width="320" /> | <img src="./screenshot/updoit-confirm.png" alt="Confirm page" width="320" /> |
+| **Menu**: the apt command for each row, with package counts | **Confirm**: what will change, and the download size |
+| <img src="./screenshot/updoit-download.png" alt="Downloading" width="320" /> | <img src="./screenshot/updoit-done.png" alt="Done" width="320" /> |
+| **Download**: parallel, with per-file progress | **Done** |
+
+The page screenshots come from the desktop simulator.
+`screenshot/updoit-launcher-mockup.png` is a mockup, not a capture: it places the Updoit
+icon on the launcher home screen using the carousel geometry from
+[CardputerZero/launcher](https://github.com/CardputerZero/launcher)'s source. The Store icon
+and carousel arrows in it are that project's assets (MIT, Copyright (c) 2026 M5Stack
+Technology CO LTD). The launcher's top bar is left blank, and the titles use DejaVu Sans
+Bold rather than the launcher's Montserrat.
 
 ## Status
 
