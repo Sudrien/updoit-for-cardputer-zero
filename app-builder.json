@@ -6,7 +6,7 @@
 
   "store": {
     "summary": "Reminder to update your Raspberry Pi OS packages",
-    "description": "A reminder to update your Raspberry Pi OS packages, an helpers to do so. Can also configure your system for daily package update checks.",
+    "description": "A reminder to update your Raspberry Pi OS packages, and helpers to do so. Can also configure your system for daily package update checks.",
     "categories": ["System Tools"],
     "screenshots": [
       "screenshot/updoit-launcher-mockup.png",
