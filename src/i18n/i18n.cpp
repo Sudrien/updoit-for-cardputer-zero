@@ -72,6 +72,7 @@ constexpr Entry kEntries[] = {
     {", %d remove", "，删除 %d", "、削除 %d"},
     {", %s", "，%s", "、%s"},
     {"\n... and %d more", "\n……还有 %d 个", "\n…他 %d 件"},
+    {" (kept back)", "（保留）", "（保留）"},
 
     // Result page
     {"Failed", "失败", "失敗"},

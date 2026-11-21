@@ -166,6 +166,7 @@ void test_lookup() {
     CHECK(std::strcmp(i18n::tr(nullptr), "") == 0);
     CHECK(i18n::needs_cjk_font());
     CHECK(i18n::format("Downloading %d/%d", 3, 12) == "ダウンロード中 3/12");
+    CHECK(std::strcmp(i18n::tr(" (kept back)"), "（保留）") == 0); // must match upgrade_job.cpp
     i18n::set_language(Language::ChineseSimplified);
     CHECK(std::strcmp(i18n::tr("Quit"), "退出") == 0);
     CHECK(i18n::format("%lld min ago", 5LL) == "5 分钟前");

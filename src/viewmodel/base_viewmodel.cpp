@@ -426,7 +426,16 @@ void BaseViewModel::menu_select(int index) {
 lv_subject_t* BaseViewModel::confirm_summary_subject() { return confirm_summary_subject_.native(); }
 
 std::vector<std::string> BaseViewModel::plan_lines() const {
-    return job_->plan_lines();
+    // The updater (shared with updoit-cli) writes English; translate its one word here.
+    static const std::string kKeptBack = " (kept back)";
+    auto lines = job_->plan_lines();
+    for (auto& line : lines) {
+        if (line.size() >= kKeptBack.size() &&
+            line.compare(line.size() - kKeptBack.size(), kKeptBack.size(), kKeptBack) == 0) {
+            line.replace(line.size() - kKeptBack.size(), kKeptBack.size(), tr(" (kept back)"));
+        }
+    }
+    return lines;
 }
 
 void BaseViewModel::confirm() {
