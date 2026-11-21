@@ -7,6 +7,16 @@
   "store": {
     "summary": "Reminder to update your Raspberry Pi OS packages",
     "description": "A reminder to update your Raspberry Pi OS packages, and helpers to do so. Can also configure your system for daily package update checks.",
+    "locales": {
+      "zh-CN": {
+        "summary": "提醒你更新 Raspberry Pi OS 软件包",
+        "description": "提醒你更新 Raspberry Pi OS 软件包，并提供更新工具，支持并行下载。还可以为系统设置每日检查软件包更新。"
+      },
+      "ja": {
+        "summary": "Raspberry Pi OS のパッケージ更新をお知らせ",
+        "description": "Raspberry Pi OS のパッケージ更新をお知らせし、更新作業を手助けします（並列ダウンロード対応）。毎日のパッケージ更新チェックも設定できます。"
+      }
+    },
     "categories": ["System Tools"],
     "screenshots": [
       "screenshot/updoit-launcher-mockup.png",
