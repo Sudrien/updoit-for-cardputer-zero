@@ -27,6 +27,11 @@
 - **Red badge on the launcher icon** with the number of pending updates (1-9, then 9+).
 - **sudo password** asked on launch (skipped when running as root or with passwordless sudo),
   kept in memory only and never written anywhere.
+- **English, Simplified Chinese and Japanese UI**, following the system locale like the
+  Store app does (`LANG=zh_*` or `ja_*`, set with `raspi-config` > Localisation Options >
+  Locale; `UPDOIT_LANG=ja` overrides it). apt's own output stays in English. Chinese and
+  Japanese text uses Noto Sans CJK if installed, otherwise the launcher's
+  `AlibabaPuHuiTi-3-55-Regular.ttf` (`UPDOIT_CJK_FONT=/path/to/font` overrides it).
 
 See [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) for scope and planned features (battery
 guard, reboot prompt, network check, auto-upgrade, pipelined download+install).

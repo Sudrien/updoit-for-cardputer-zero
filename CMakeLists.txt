@@ -458,12 +458,29 @@ target_link_libraries(${PROJECT_NAME}_updater
 add_executable(updoit-cli tests/updoit_cli.cpp)
 target_link_libraries(updoit-cli PRIVATE ${PROJECT_NAME}_updater)
 
+# ====================================================
+# UI translations (zh-CN, ja)
+# - plain C++17, no LVGL, so it can be tested on its own
+# ====================================================
+add_library(${PROJECT_NAME}_i18n
+    STATIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n/i18n.cpp"
+)
+
+target_include_directories(${PROJECT_NAME}_i18n
+    PUBLIC
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/i18n"
+)
+
 option(UPDOIT_BUILD_TESTS "Build updater parser tests" ON)
 if(UPDOIT_BUILD_TESTS)
     enable_testing()
     add_executable(updater_tests tests/updater_tests.cpp)
     target_link_libraries(updater_tests PRIVATE ${PROJECT_NAME}_updater)
     add_test(NAME updater_tests COMMAND updater_tests)
+    add_executable(i18n_tests tests/i18n_tests.cpp)
+    target_link_libraries(i18n_tests PRIVATE ${PROJECT_NAME}_i18n)
+    add_test(NAME i18n_tests COMMAND i18n_tests)
 endif()
 
 # ====================================================
@@ -538,6 +555,7 @@ target_link_libraries(${PROJECT_NAME}_view
         lvgl
         ${PROJECT_NAME}_reactive
         ${PROJECT_NAME}_platform
+        ${PROJECT_NAME}_i18n
 )
 
 # ====================================================
@@ -567,6 +585,7 @@ target_link_libraries(${PROJECT_NAME}_viewmodel
         ${PROJECT_NAME}_model
         ${PROJECT_NAME}_platform
         ${PROJECT_NAME}_updater
+        ${PROJECT_NAME}_i18n
 )
 
 
@@ -638,6 +657,7 @@ target_link_libraries(${PROJECT_NAME}_core
         ${PROJECT_NAME}_view
         ${PROJECT_NAME}_viewmodel
         ${PROJECT_NAME}_platform
+        ${PROJECT_NAME}_i18n
 )
 
 if(USE_DESKTOP)

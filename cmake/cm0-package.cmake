@@ -144,6 +144,9 @@ if(FMT_INCLUDE_DIR AND FMT_LIBRARY)
     string(APPEND APP_DEBIAN_DEPENDS ", libfmt10")
 endif()
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "${APP_DEBIAN_DEPENDS}")
+# The launcher ships the CJK font the Chinese and Japanese UI uses when Noto Sans CJK
+# is not installed (see src/app/asset_manager.cpp).
+set(CPACK_DEBIAN_PACKAGE_RECOMMENDS "applaunch")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
 set(CPACK_DEBIAN_PACKAGE_CONTROL_STRICT_PERMISSION TRUE)
 

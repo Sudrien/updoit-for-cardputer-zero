@@ -8,6 +8,7 @@
 
 #include "asset_manager.h"
 #include "bindings.h"
+#include "i18n.h"
 #include "theme.h"
 
 namespace view::widgets {
@@ -102,7 +103,7 @@ void NavBar::update_hints() {
         }
         lv_obj_remove_flag(items_[i], LV_OBJ_FLAG_HIDDEN);
         lv_label_set_text(key_labels_[i], hints[i].key);
-        lv_label_set_text(action_labels_[i], hints[i].action);
+        lv_label_set_text(action_labels_[i], i18n::tr(hints[i].action));
         lv_obj_set_style_text_color(key_labels_[i], colors.primary, 0);
         lv_obj_set_style_text_color(action_labels_[i], colors.text, 0);
     }

@@ -9,6 +9,7 @@
 #include "application_config.h"
 #include "asset_manager.h"
 #include "help_popup.h"
+#include "i18n.h"
 #include "logger.h"
 #include "linux_input.h"
 #include "screenshot_service.h"
@@ -132,7 +133,7 @@ private:
                 const auto result = platform::screenshot::capture_active_screen();
                 if (result.success) {
                     LOG_INFO("screenshot saved: {}", result.path);
-                    toast_->show_highlighted("Saved to ",
+                    toast_->show_highlighted(i18n::tr("Saved to "),
                                              result.path,
                                              "",
                                              view::widgets::ToastTone::Success,
@@ -141,7 +142,7 @@ private:
                 }
                 else {
                     LOG_WARN("screenshot failed: {}", result.error);
-                    toast_->show("Screenshot failed: " + result.error,
+                    toast_->show(i18n::format("Screenshot failed: %s", result.error.c_str()),
                                  view::widgets::ToastTone::Error,
                                  3200);
                 }
@@ -176,7 +177,7 @@ private:
                 view_model_.request_quit();
             }
             else {
-                toast_->show("Installing - please wait", view::widgets::ToastTone::Warning, 2000);
+                toast_->show(i18n::tr("Installing - please wait"), view::widgets::ToastTone::Warning, 2000);
             }
             return true;
         }
@@ -242,6 +243,7 @@ lv_display_t* init_device_display() {
 int Application::run() {
     logger::Logger::init();
     logger::Logger::set_tag("updoit");
+    LOG_INFO("UI language: {}", i18n::code(i18n::current()));
 
     lv_init();
 

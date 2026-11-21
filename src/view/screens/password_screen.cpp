@@ -4,6 +4,7 @@
 
 #include "updoit_screens.h"
 
+#include "i18n.h"
 #include "screen_style.h"
 
 namespace screen {
@@ -38,7 +39,7 @@ void PasswordScreen::build_content(lv_obj_t* content) {
     lv_obj_align(mask, LV_ALIGN_LEFT_MID, 0, 2);
 
     auto* note = style::label(column, dark, style::font(assets(), 12),
-                              "Kept in memory only, never saved.");
+                              i18n::tr("Kept in memory only, never saved."));
     style::accent(note, dark, style::Accent::Part::Text, style::Accent::Tone::Muted);
 }
 

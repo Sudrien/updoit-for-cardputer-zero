@@ -43,11 +43,15 @@ public:
 
 private:
     struct LoadedFont;
+    struct CjkFont;
 
     void add_root_if_valid(std::filesystem::path path);
+    lv_font_t* load_cjk_standard_font(uint32_t size);
 
     std::vector<std::filesystem::path> roots_;
     std::vector<std::unique_ptr<LoadedFont>> loaded_fonts_;
+    std::vector<std::unique_ptr<CjkFont>> cjk_fonts_;
+    bool cjk_missing_logged_ = false;
 };
 
 } // namespace app

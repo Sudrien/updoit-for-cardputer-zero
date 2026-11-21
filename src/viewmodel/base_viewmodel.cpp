@@ -7,6 +7,7 @@
 #include "base_viewmodel.h"
 
 #include "daily_refresh.h"
+#include "i18n.h"
 #include "status_cache.h"
 
 #include <chrono>
@@ -17,6 +18,7 @@
 namespace viewmodel {
 namespace {
 
+using i18n::tr;
 using updater::Operation;
 using updater::Phase;
 
@@ -38,23 +40,43 @@ int permille(uint64_t done, uint64_t total) {
 std::string age_text(int64_t checked) {
     const int64_t now = static_cast<int64_t>(std::time(nullptr));
     const int64_t age = now - checked;
-    char buf[32];
     if (checked <= 0 || age < 0) {
         return "";
     }
     if (age < 90) {
-        return "just now";
+        return tr("just now");
     }
     if (age < 90 * 60) {
-        std::snprintf(buf, sizeof(buf), "%lld min ago", static_cast<long long>(age / 60));
+        return i18n::format("%lld min ago", static_cast<long long>(age / 60));
     }
-    else if (age < 36 * 3600) {
-        std::snprintf(buf, sizeof(buf), "%lld h ago", static_cast<long long>(age / 3600));
+    if (age < 36 * 3600) {
+        return i18n::format("%lld h ago", static_cast<long long>(age / 3600));
     }
-    else {
-        std::snprintf(buf, sizeof(buf), "%lld d ago", static_cast<long long>(age / 86400));
+    return i18n::format("%lld d ago", static_cast<long long>(age / 86400));
+}
+
+// The last `max` bytes of `text`, without starting inside a UTF-8 sequence.
+std::string utf8_tail(const std::string& text, size_t max) {
+    if (text.size() <= max) {
+        return text;
     }
-    return buf;
+    size_t start = text.size() - max;
+    while (start < text.size() && (static_cast<unsigned char>(text[start]) & 0xC0) == 0x80) {
+        ++start;
+    }
+    return text.substr(start);
+}
+
+// The first `max` bytes of `text`, without ending inside a UTF-8 sequence.
+std::string utf8_head(const std::string& text, size_t max) {
+    if (text.size() <= max) {
+        return text;
+    }
+    size_t end = max;
+    while (end > 0 && (static_cast<unsigned char>(text[end]) & 0xC0) == 0x80) {
+        --end;
+    }
+    return text.substr(0, end);
 }
 
 void wipe(std::string& s) {
@@ -93,7 +115,7 @@ BaseViewModel::BaseViewModel()
       current_page_subject_(page_to_int(model_.current_page())),
       quit_requested_subject_(false),
       password_mask_subject_(""),
-      password_message_subject_("Enter your sudo password"),
+      password_message_subject_(tr("Enter your sudo password")),
       password_busy_subject_(false),
       menu_index_subject_(0),
       updates_text_subject_(""),
@@ -129,9 +151,9 @@ void BaseViewModel::start() {
     refresh_updates_text();
     switch (privilege_.mode()) {
         case updater::Privilege::Mode::Unavailable:
-            result_title_subject_.set("No root access");
-            result_text_subject_.set("Updoit needs sudo (or to run as root) to install "
-                                     "packages, and sudo was not found.");
+            result_title_subject_.set(tr("No root access"));
+            result_text_subject_.set(tr("Updoit needs sudo (or to run as root) to install "
+                                        "packages, and sudo was not found."));
             result_tone_subject_.set(1);
             show_page(model::AppPage::Result);
             break;
@@ -150,11 +172,11 @@ void BaseViewModel::tick() {
         const bool ok = auth_future_.get();
         password_busy_subject_.set(false);
         if (ok) {
-            password_message_subject_.set("Enter your sudo password");
+            password_message_subject_.set(tr("Enter your sudo password"));
             show_page(model::AppPage::Menu);
         }
         else {
-            password_message_subject_.set("Wrong password, try again");
+            password_message_subject_.set(tr("Wrong password, try again"));
         }
     }
 
@@ -269,7 +291,7 @@ void BaseViewModel::password_submit() {
         return;
     }
     password_busy_subject_.set(true);
-    password_message_subject_.set("Checking...");
+    password_message_subject_.set(tr("Checking..."));
     // sudo waits ~2 s after a wrong password; keep the UI responsive.
     std::string attempt = password_input_;
     wipe(password_input_);
@@ -297,7 +319,7 @@ const char* BaseViewModel::menu_label(int index) {
         "apt dist-upgrade", "apt autoremove",    "apt clean",
         "Turn daily check on",
     };
-    return kLabels[index];
+    return tr(kLabels[index]); // the apt commands are not in the table and stay as they are
 }
 
 lv_subject_t* BaseViewModel::menu_hint_subject(int index) {
@@ -308,8 +330,8 @@ lv_subject_t* BaseViewModel::daily_label_subject() { return daily_label_subject_
 
 void BaseViewModel::refresh_daily_row() {
     daily_refresh_on_ = updater::daily_refresh_enabled();
-    daily_label_subject_.set(daily_refresh_on_ ? "Turn daily check off" : "Turn daily check on");
-    menu_hint_subject_[model::kMenuDailyRefresh].set(daily_refresh_on_ ? "is on" : "is off");
+    daily_label_subject_.set(tr(daily_refresh_on_ ? "Turn daily check off" : "Turn daily check on"));
+    menu_hint_subject_[model::kMenuDailyRefresh].set(tr(daily_refresh_on_ ? "is on" : "is off"));
 }
 
 void BaseViewModel::toggle_daily_refresh() {
@@ -319,9 +341,10 @@ void BaseViewModel::toggle_daily_refresh() {
         return;
     }
     refresh_daily_row();
-    result_title_subject_.set("Failed");
+    result_title_subject_.set(tr("Failed"));
     result_tone_subject_.set(1);
-    result_text_subject_.set(("Could not change the daily check.\n" + error).substr(0, 500).c_str());
+    result_text_subject_.set(
+        utf8_head(std::string(tr("Could not change the daily check.")) + "\n" + error, 500).c_str());
     show_page(model::AppPage::Result);
 }
 
@@ -329,39 +352,41 @@ void BaseViewModel::refresh_updates_text() {
     const auto cache = updater::read_status_cache();
     std::string text;
     if (!cache.valid) {
-        text = "Not checked yet - try Refresh lists";
+        text = tr("Not checked yet - try Refresh lists");
     }
     else {
         if (cache.upgradable == 0) {
-            text = "Up to date";
+            text = tr("Up to date");
         }
         else {
-            text = std::to_string(cache.upgradable) +
-                   (cache.upgradable == 1 ? " update available" : " updates available");
+            text = i18n::format(cache.upgradable == 1 ? "%d update available" : "%d updates available",
+                                cache.upgradable);
         }
         const auto age = age_text(cache.checked);
         if (!age.empty()) {
             text += " - " + age;
         }
         if (!cache.error.empty()) {
-            text = "Last check failed - " + age;
+            text = i18n::format("Last check failed - %s", age.c_str());
         }
     }
     updates_text_subject_.set(text.c_str());
 
     // Per-row hints: how many packages each operation would touch (cached by updoit-check).
     const auto count_text = [&](int n) {
-        return !cache.valid ? std::string("?") : n == 0 ? std::string("none") : std::to_string(n) + " pkg" + (n == 1 ? "" : "s");
+        return !cache.valid ? std::string("?")
+               : n == 0     ? std::string(tr("none"))
+                            : i18n::format(n == 1 ? "%d pkg" : "%d pkgs", n);
     };
     const auto updated = age_text(cache.updated);
-    menu_hint_subject_[0].set(updated.empty() ? "never updated" : updated.c_str());
+    menu_hint_subject_[0].set(updated.empty() ? tr("never updated") : updated.c_str());
     menu_hint_subject_[1].set(count_text(cache.full_upgradable).c_str());
     menu_hint_subject_[2].set(count_text(cache.upgradable).c_str());
     menu_hint_subject_[3].set(count_text(cache.full_upgradable).c_str());
     menu_hint_subject_[4].set(count_text(cache.autoremovable).c_str());
     menu_hint_subject_[5].set(!cache.valid || !cache.has_cache_bytes
                                   ? "?"
-                                  : (cache.cache_bytes == 0 ? "empty"
+                                  : (cache.cache_bytes == 0 ? tr("empty")
                                                             : updater::format_bytes(cache.cache_bytes).c_str()));
     refresh_daily_row();
 }
@@ -383,9 +408,9 @@ void BaseViewModel::menu_select(int index) {
     const auto op = kMenuOps[model_.menu_index()];
     if (job_->start(op)) {
         // The first snapshot moves us on; show the progress page while planning.
-        progress_title_subject_.set(op == Operation::Refresh ? "Refreshing lists"
-                                    : op == Operation::Clean ? "Cleaning caches"
-                                                             : "Checking");
+        progress_title_subject_.set(tr(op == Operation::Refresh ? "Refreshing lists"
+                                       : op == Operation::Clean ? "Cleaning caches"
+                                                                : "Checking"));
         progress_detail_subject_.set(updater::operation_apt_verb(op));
         progress_value_subject_.set(0);
         log_line_subject_.set("");
@@ -429,26 +454,25 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
         log_line_subject_.set(s.log_tail.back().c_str());
     }
 
-    char buf[128];
     switch (s.phase) {
         case Phase::Idle:
             break;
 
         case Phase::Planning:
-            progress_title_subject_.set("Checking");
+            progress_title_subject_.set(tr("Checking"));
             break;
 
         case Phase::AwaitingConfirm: {
-            std::string summary = s.operation == Operation::Download ? "Download only: " : "";
-            summary += std::to_string(s.upgrades) + " upgrade";
+            std::string summary = s.operation == Operation::Download ? tr("Download only: ") : "";
+            summary += i18n::format("%d upgrade", s.upgrades);
             if (s.new_installs) {
-                summary += ", " + std::to_string(s.new_installs) + " new";
+                summary += i18n::format(", %d new", s.new_installs);
             }
             if (s.removals) {
-                summary += ", " + std::to_string(s.removals) + " remove";
+                summary += i18n::format(", %d remove", s.removals);
             }
             if (s.download_bytes) {
-                summary += ", " + updater::format_bytes(s.download_bytes);
+                summary += i18n::format(", %s", updater::format_bytes(s.download_bytes).c_str());
             }
             confirm_summary_subject_.set(summary.c_str());
             if (previous != Phase::AwaitingConfirm) {
@@ -459,10 +483,11 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
 
         case Phase::Downloading: {
             const auto& d = s.download;
-            std::snprintf(buf, sizeof(buf), "Downloading %d/%d", d.files_complete, d.files_total);
-            progress_title_subject_.set(buf);
-            progress_detail_subject_.set((updater::format_bytes(d.done_bytes) + " of " +
-                                          updater::format_bytes(d.total_bytes))
+            progress_title_subject_.set(
+                i18n::format("Downloading %d/%d", d.files_complete, d.files_total).c_str());
+            progress_detail_subject_.set(i18n::format("%s of %s",
+                                                      updater::format_bytes(d.done_bytes).c_str(),
+                                                      updater::format_bytes(d.total_bytes).c_str())
                                              .c_str());
             progress_value_subject_.set(permille(d.done_bytes, d.total_bytes));
             for (int i = 0; i < kFileSlots; ++i) {
@@ -486,10 +511,10 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
                     file_value_subject_[i].set(-1);
                 }
             }
-            progress_title_subject_.set(s.operation == Operation::Refresh ? "Refreshing lists"
-                                        : s.operation == Operation::Clean ? "Cleaning caches"
-                                                                          : "Installing");
-            progress_detail_subject_.set(s.install_status.empty() ? "Starting apt..."
+            progress_title_subject_.set(tr(s.operation == Operation::Refresh ? "Refreshing lists"
+                                           : s.operation == Operation::Clean ? "Cleaning caches"
+                                                                             : "Installing"));
+            progress_detail_subject_.set(s.install_status.empty() ? tr("Starting apt...")
                                                                   : s.install_status.c_str());
             progress_value_subject_.set(static_cast<int>(s.install_percent * 10));
             if (model_.current_page() != model::AppPage::Progress) {
@@ -505,38 +530,39 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
             }
             std::string text;
             if (s.phase == Phase::Done) {
-                result_title_subject_.set(s.operation == Operation::Refresh ? "Lists refreshed"
-                                          : s.operation == Operation::Clean ? "Caches cleaned"
-                                                                            : "Done");
+                result_title_subject_.set(tr(s.operation == Operation::Refresh ? "Lists refreshed"
+                                             : s.operation == Operation::Clean ? "Caches cleaned"
+                                                                               : "Done"));
                 result_tone_subject_.set(0);
                 if (s.operation == Operation::Download) {
-                    result_title_subject_.set("Downloaded");
+                    result_title_subject_.set(tr("Downloaded"));
                     text = s.downloaded_count == 0
-                               ? "Nothing to download."
-                               : std::to_string(s.downloaded_count) +
-                                     " packages cached. Run apt upgrade to install them.";
+                               ? std::string(tr("Nothing to download."))
+                               : i18n::format("%d packages cached. Run apt upgrade to install them.",
+                                              static_cast<int>(s.downloaded_count));
                 }
                 else if (s.operation == Operation::Clean) {
-                    text = s.freed_bytes ? "Freed " + updater::format_bytes(s.freed_bytes) + "."
-                                         : "Nothing to clean.";
+                    text = s.freed_bytes
+                               ? i18n::format("Freed %s.", updater::format_bytes(s.freed_bytes).c_str())
+                               : std::string(tr("Nothing to clean."));
                 }
                 else if (s.upgrades + s.new_installs + s.removals == 0 &&
                     s.operation != Operation::Refresh) {
-                    text = "Nothing to do.";
+                    text = tr("Nothing to do.");
                 }
                 else if (!updater::operation_is_direct(s.operation)) {
-                    text = std::to_string(s.upgrades) + " upgraded";
+                    text = i18n::format("%d upgraded", s.upgrades);
                     if (s.new_installs) {
-                        text += ", " + std::to_string(s.new_installs) + " installed";
+                        text += i18n::format(", %d installed", s.new_installs);
                     }
                     if (s.removals) {
-                        text += ", " + std::to_string(s.removals) + " removed";
+                        text += i18n::format(", %d removed", s.removals);
                     }
-                    text += ".";
+                    text += tr(".");
                 }
             }
             else if (s.phase == Phase::Failed) {
-                result_title_subject_.set("Failed");
+                result_title_subject_.set(tr("Failed"));
                 result_tone_subject_.set(1);
                 text = s.error;
                 // last few log lines help explain apt/dpkg errors
@@ -546,13 +572,11 @@ void BaseViewModel::publish_job(const updater::JobSnapshot& s) {
                 }
             }
             else {
-                result_title_subject_.set("Cancelled");
+                result_title_subject_.set(tr("Cancelled"));
                 result_tone_subject_.set(2);
-                text = "Nothing was installed.";
+                text = tr("Nothing was installed.");
             }
-            if (text.size() > 500) {
-                text = text.substr(text.size() - 500);
-            }
+            text = utf8_tail(text, 500);
             result_text_subject_.set(text.c_str());
             show_page(model::AppPage::Result);
             break;

@@ -4,6 +4,7 @@
 
 #include "updoit_screens.h"
 
+#include "i18n.h"
 #include "screen_style.h"
 
 #include <string>
@@ -46,7 +47,7 @@ void ConfirmScreen::build_content(lv_obj_t* content) {
         text += lines[i];
     }
     if (lines.size() > kMaxLines) {
-        text += "\n... and " + std::to_string(lines.size() - kMaxLines) + " more";
+        text += i18n::format("\n... and %d more", static_cast<int>(lines.size() - kMaxLines));
     }
     auto* body = style::label(list_, dark, style::font(assets(), 12), text.c_str());
     lv_obj_set_width(body, LV_PCT(100));

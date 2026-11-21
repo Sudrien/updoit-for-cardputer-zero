@@ -6,6 +6,7 @@
 
 #include "asset_manager.h"
 
+#include "i18n.h"
 #include "logger.h"
 
 #if LV_USE_FREETYPE
@@ -13,6 +14,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdlib>
 #include <utility>
 
 #ifndef APP_NAME
@@ -48,7 +50,17 @@ std::filesystem::path weakly_canonical_path(const std::filesystem::path& path) {
     return ec ? path.lexically_normal() : canonical;
 }
 
-#if !USE_DESKTOP
+// Fonts with Chinese and Japanese glyphs, tried in order when the UI language
+// needs them and Noto Sans CJK is not installed. The first one ships with the
+// CardputerZero launcher (applaunch) and covers all kana and ~21k CJK ideographs;
+// the others are common Debian/Ubuntu packages, which also helps the simulator.
+constexpr const char* kCjkFallbackFonts[] = {
+    "/usr/share/APPLaunch/share/font/AlibabaPuHuiTi-3-55-Regular.ttf",
+    "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+    "/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+    "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+};
+
 const lv_font_t* fallback_font(uint32_t size) {
     if (size <= 10) {
         return &lv_font_montserrat_10;
@@ -73,7 +85,6 @@ const lv_font_t* fallback_font(uint32_t size) {
     }
     return &lv_font_montserrat_28;
 }
-#endif
 
 } // namespace
 
@@ -81,6 +92,11 @@ struct AssetManager::LoadedFont {
     std::filesystem::path path;
     uint32_t size;
     lv_font_t* font;
+};
+
+struct AssetManager::CjkFont {
+    uint32_t size;
+    lv_font_t font; // a copy of the built-in Montserrat face, with a CJK fallback
 };
 
 AssetManager::AssetManager(std::string app_name, std::filesystem::path cmake_assets_root) {
@@ -168,20 +184,58 @@ lv_font_t* AssetManager::load_font(const std::filesystem::path& file_name, uint3
 }
 
 lv_font_t* AssetManager::load_standard_font(uint32_t size, StandardFontWeight weight) {
-#if USE_DESKTOP
-    LV_UNUSED(size);
-    LV_UNUSED(weight);
-    return nullptr;
-#else
+#if !USE_DESKTOP
     const char* path = weight == StandardFontWeight::Regular
                            ? kNotoSansCjkRegular
                            : kNotoSansCjkBold;
-    auto* font = load_font(path, size);
-    if (font) {
-        font->fallback = fallback_font(size);
+    if (path_exists(path)) {
+        auto* font = load_font(path, size);
+        if (font) {
+            font->fallback = fallback_font(size);
+            return font;
+        }
     }
-    return font;
+#else
+    LV_UNUSED(weight);
 #endif
+    // Without Noto the UI uses the built-in Montserrat faces (callers fall back
+    // to them on nullptr). Chinese and Japanese text also needs CJK glyphs.
+    if (!i18n::needs_cjk_font()) {
+        return nullptr;
+    }
+    return load_cjk_standard_font(size);
+}
+
+lv_font_t* AssetManager::load_cjk_standard_font(uint32_t size) {
+    for (auto& cached : cjk_fonts_) {
+        if (cached->size == size) {
+            return &cached->font;
+        }
+    }
+    lv_font_t* cjk = nullptr;
+    if (const char* forced = std::getenv("UPDOIT_CJK_FONT"); forced && *forced) {
+        cjk = load_font(forced, size);
+    }
+    for (const char* candidate : kCjkFallbackFonts) {
+        if (cjk) {
+            break;
+        }
+        if (path_exists(candidate)) {
+            cjk = load_font(candidate, size);
+        }
+    }
+    if (!cjk) {
+        if (!cjk_missing_logged_) {
+            LOG_WARN("no CJK font found; Chinese/Japanese text will show as boxes");
+            cjk_missing_logged_ = true;
+        }
+        return nullptr;
+    }
+    // Latin keeps the built-in face (same look as English); CJK comes from the fallback.
+    auto entry = std::make_unique<CjkFont>(CjkFont{size, *fallback_font(size)});
+    entry->font.fallback = cjk;
+    cjk_fonts_.push_back(std::move(entry));
+    return &cjk_fonts_.back()->font;
 }
 
 void AssetManager::add_root_if_valid(std::filesystem::path path) {

@@ -8,6 +8,7 @@
 
 #include "asset_manager.h"
 #include "base_viewmodel.h"
+#include "i18n.h"
 #include "theme.h"
 
 #include <array>
@@ -81,7 +82,7 @@ void HelpPopup::build() {
     lv_obj_add_flag(panel_, LV_OBJ_FLAG_CLICKABLE);
 
     title_ = lv_label_create(panel_);
-    lv_label_set_text(title_, "Keyboard help");
+    lv_label_set_text(title_, i18n::tr("Keyboard help"));
     auto* title_font = assets_.load_standard_font(15);
     lv_obj_set_style_text_font(title_, title_font ? title_font : &lv_font_montserrat_14, 0);
     lv_obj_align(title_, LV_ALIGN_TOP_LEFT, 12, 9);
@@ -126,7 +127,7 @@ void HelpPopup::build() {
     }
 
     footer_ = lv_label_create(panel_);
-    lv_label_set_text(footer_, "HELP / ESC  Close   PRSC  Screenshot");
+    lv_label_set_text(footer_, i18n::tr("HELP / ESC  Close   PRSC  Screenshot"));
     lv_label_set_long_mode(footer_, LV_LABEL_LONG_CLIP);
     auto* footer_font = assets_.load_standard_font(10);
     lv_obj_set_style_text_font(footer_, footer_font ? footer_font : &lv_font_montserrat_10, 0);
@@ -168,15 +169,15 @@ bool HelpPopup::visible() const {
 
 void HelpPopup::update_rows(model::AppPage page) {
     const auto help = help_for(page);
-    lv_label_set_text(page_badge_, help.badge);
+    lv_label_set_text(page_badge_, i18n::tr(help.badge));
     for (std::size_t i = 0; i < rows_.size(); ++i) {
         if (i >= help.count) {
             lv_obj_add_flag(rows_[i].row, LV_OBJ_FLAG_HIDDEN);
             continue;
         }
         lv_obj_remove_flag(rows_[i].row, LV_OBJ_FLAG_HIDDEN);
-        lv_label_set_text(rows_[i].key, help.rows[i].key);
-        lv_label_set_text(rows_[i].action, help.rows[i].action);
+        lv_label_set_text(rows_[i].key, i18n::tr(help.rows[i].key)); // key names stay; "type" does not
+        lv_label_set_text(rows_[i].action, i18n::tr(help.rows[i].action));
     }
 }
 
